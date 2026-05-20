@@ -97,6 +97,10 @@ export default function Perfil() {
         <Text style={styles.botaoEditorTexto}>📋 Painel do Editor</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.botaoDashboard} onPress={() => router.push('/dashboard')}>
+        <Text style={styles.botaoDashboardTexto}>📊 Dashboard Admin</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.botaoNova} onPress={() => router.push('/nova-receita')}>
         <Text style={styles.botaoNovaTexto}>+ Nova Receita</Text>
       </TouchableOpacity>
@@ -136,6 +140,8 @@ const styles = StyleSheet.create({
   cardSeta: { fontSize: 24, color: '#ccc' },
   botaoEditor: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoEditorTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
+  botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoNova: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoNovaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoSair: { borderWidth: 2, borderColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
