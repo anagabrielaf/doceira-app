@@ -2,34 +2,23 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/AuthContext';
 
 export default function Perfil() {
   const router = useRouter();
-  const [perfil, setPerfil] = useState<any>(null);
+  const { perfil: authPerfil, isEditor, isAdmin, isConfeiteira } = useAuth();
   const [receitas, setReceitas] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    carregarPerfil();
+    carregarReceitas();
   }, []);
 
-  async function carregarPerfil() {
+  async function carregarReceitas() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
-    const { data: perfilData } = await supabase
-      .from('perfis')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    const { data: receitasData } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('autor_id', user.id);
-
-    setPerfil(perfilData);
-    setReceitas(receitasData || []);
+    const { data } = await supabase.from('receitas').select('*').eq('autor_id', user.id);
+    setReceitas(data || []);
     setCarregando(false);
   }
 
@@ -39,11 +28,7 @@ export default function Perfil() {
   }
 
   if (carregando) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color="#C2185B" size="large" />
-      </View>
-    );
+    return <View style={styles.loading}><ActivityIndicator color="#C2185B" size="large" /></View>;
   }
 
   return (
@@ -54,9 +39,9 @@ export default function Perfil() {
 
       <View style={styles.avatarBox}>
         <Text style={styles.avatar}>👩‍🍳</Text>
-        <Text style={styles.nome}>{perfil?.nome || 'Usuário'}</Text>
-        <Text style={styles.email}>{perfil?.email}</Text>
-        <Text style={styles.badge}>{perfil?.tipo || 'Leitor'}</Text>
+        <Text style={styles.nome}>{authPerfil?.nome || 'Usuário'}</Text>
+        <Text style={styles.email}>{authPerfil?.email}</Text>
+        <Text style={styles.badge}>{authPerfil?.tipo || 'Leitor'}</Text>
         <TouchableOpacity style={styles.botaoEditar} onPress={() => router.push('/editar-conta')}>
           <Text style={styles.botaoEditarTexto}>✏️ Editar Conta</Text>
         </TouchableOpacity>
@@ -77,36 +62,45 @@ export default function Perfil() {
         </View>
       </View>
 
-      <Text style={styles.secao}>Minhas Receitas</Text>
-
-      {receitas.length === 0 ? (
-        <Text style={styles.semReceitas}>Você ainda não tem receitas. Crie uma!</Text>
-      ) : (
-        receitas.map((receita) => (
-          <TouchableOpacity key={receita.id} style={styles.card} onPress={() => router.push({ pathname: '/receita', params: { id: receita.id } })}>
-            <Text style={styles.cardEmoji}>{receita.emoji}</Text>
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardTitulo}>{receita.titulo}</Text>
-              <Text style={[styles.cardStatus, receita.publicada ? styles.publicada : styles.pendente]}>
-                {receita.publicada ? '✅ Publicada' : '⏳ Pendente'}
-              </Text>
-            </View>
-            <Text style={styles.cardSeta}>›</Text>
+      {/* Minhas Receitas - visível para confeiteira, editor e admin */}
+      {(isConfeiteira || isEditor || isAdmin) && (
+        <>
+          <Text style={styles.secao}>Minhas Receitas</Text>
+          {receitas.length === 0 ? (
+            <Text style={styles.semReceitas}>Você ainda não tem receitas. Crie uma!</Text>
+          ) : (
+            receitas.map((receita) => (
+              <TouchableOpacity key={receita.id} style={styles.card} onPress={() => router.push({ pathname: '/receita', params: { id: receita.id } })}>
+                <Text style={styles.cardEmoji}>{receita.emoji}</Text>
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardTitulo}>{receita.titulo}</Text>
+                  <Text style={[styles.cardStatus, receita.publicada ? styles.publicada : styles.pendente]}>
+                    {receita.publicada ? '✅ Publicada' : '⏳ Pendente'}
+                  </Text>
+                </View>
+                <Text style={styles.cardSeta}>›</Text>
+              </TouchableOpacity>
+            ))
+          )}
+          <TouchableOpacity style={styles.botaoNova} onPress={() => router.push('/nova-receita')}>
+            <Text style={styles.botaoNovaTexto}>+ Nova Receita</Text>
           </TouchableOpacity>
-        ))
+        </>
       )}
 
-      <TouchableOpacity style={styles.botaoEditor} onPress={() => router.push('/painel-editor')}>
-        <Text style={styles.botaoEditorTexto}>📋 Painel do Editor</Text>
-      </TouchableOpacity>
+      {/* Painel do Editor - visível para editor e admin */}
+      {(isEditor || isAdmin) && (
+        <TouchableOpacity style={styles.botaoEditor} onPress={() => router.push('/painel-editor')}>
+          <Text style={styles.botaoEditorTexto}>📋 Painel do Editor</Text>
+        </TouchableOpacity>
+      )}
 
-      <TouchableOpacity style={styles.botaoDashboard} onPress={() => router.push('/dashboard')}>
-        <Text style={styles.botaoDashboardTexto}>📊 Dashboard Admin</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.botaoNova} onPress={() => router.push('/nova-receita')}>
-        <Text style={styles.botaoNovaTexto}>+ Nova Receita</Text>
-      </TouchableOpacity>
+      {/* Dashboard - visível apenas para admin */}
+      {isAdmin && (
+        <TouchableOpacity style={styles.botaoDashboard} onPress={() => router.push('/dashboard')}>
+          <Text style={styles.botaoDashboardTexto}>📊 Dashboard Admin</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.botaoSair} onPress={sair}>
         <Text style={styles.botaoSairTexto}>Sair</Text>
@@ -143,12 +137,12 @@ const styles = StyleSheet.create({
   publicada: { color: '#4CAF50' },
   pendente: { color: '#FF9800' },
   cardSeta: { fontSize: 24, color: '#ccc' },
-  botaoEditorTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoEditor: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
+  botaoEditorTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoNova: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoNovaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  botaoSair: { borderWidth: 2, borderColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
+  botaoSair: { borderWidth: 2, borderColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoSairTexto: { color: '#C2185B', fontSize: 16, fontWeight: 'bold' },
 });
