@@ -57,6 +57,9 @@ export default function Perfil() {
         <Text style={styles.nome}>{perfil?.nome || 'Usuário'}</Text>
         <Text style={styles.email}>{perfil?.email}</Text>
         <Text style={styles.badge}>{perfil?.tipo || 'Leitor'}</Text>
+        <TouchableOpacity style={styles.botaoEditar} onPress={() => router.push('/editar-conta')}>
+          <Text style={styles.botaoEditarTexto}>✏️ Editar Conta</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsRow}>
@@ -123,7 +126,9 @@ const styles = StyleSheet.create({
   avatar: { fontSize: 72, marginBottom: 8 },
   nome: { fontSize: 22, fontWeight: 'bold', color: '#333' },
   email: { fontSize: 14, color: '#888', marginBottom: 8 },
-  badge: { backgroundColor: '#F8BBD9', color: '#C2185B', paddingHorizontal: 16, paddingVertical: 4, borderRadius: 20, fontSize: 13, fontWeight: '600' },
+  badge: { backgroundColor: '#F8BBD9', color: '#C2185B', paddingHorizontal: 16, paddingVertical: 4, borderRadius: 20, fontSize: 13, fontWeight: '600', marginBottom: 12 },
+  botaoEditar: { borderWidth: 1.5, borderColor: '#C2185B', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
+  botaoEditarTexto: { color: '#C2185B', fontSize: 14, fontWeight: '600' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   statBox: { alignItems: 'center' },
   statValor: { fontSize: 18, fontWeight: 'bold', color: '#C2185B' },
@@ -138,8 +143,8 @@ const styles = StyleSheet.create({
   publicada: { color: '#4CAF50' },
   pendente: { color: '#FF9800' },
   cardSeta: { fontSize: 24, color: '#ccc' },
-  botaoEditor: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoEditorTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoEditor: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoNova: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
