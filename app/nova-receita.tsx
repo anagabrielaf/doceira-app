@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 
 export default function NovaReceita() {
@@ -8,10 +9,30 @@ export default function NovaReceita() {
   const [titulo, setTitulo] = useState('');
   const [tempo, setTempo] = useState('');
   const [porcoes, setPorcoes] = useState('');
-  const [dificuldade, setDificuldade] = useState('');
+  const [dificuldade, setDificuldade] = useState('Fácil');
   const [ingredientes, setIngredientes] = useState('');
   const [modoPreparo, setModoPreparo] = useState('');
+  const [foto, setFoto] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+
+  const dificuldades = ['Fácil', 'Médio', 'Difícil'];
+
+  async function escolherFoto() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão negada', 'Precisamos de acesso à sua galeria!');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setFoto(result.assets[0].uri);
+    }
+  }
 
   async function publicarReceita() {
     if (!titulo || !ingredientes || !modoPreparo) {
@@ -20,6 +41,21 @@ export default function NovaReceita() {
     }
     setCarregando(true);
     const { data: { user } } = await supabase.auth.getUser();
+
+    let fotoUrl = null;
+    if (foto) {
+      const fileName = `receita_${Date.now()}.jpg`;
+      const response = await fetch(foto);
+      const blob = await response.blob();
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('fotos')
+        .upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (!uploadError && uploadData) {
+        const { data: urlData } = supabase.storage.from('fotos').getPublicUrl(fileName);
+        fotoUrl = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from('receitas').insert({
       titulo,
       tempo,
@@ -28,9 +64,11 @@ export default function NovaReceita() {
       ingredientes,
       modo_preparo: modoPreparo,
       emoji: '🍰',
+      foto_url: fotoUrl,
       publicada: false,
       autor_id: user?.id,
     });
+
     setCarregando(false);
     if (error) {
       Alert.alert('Erro', 'Não foi possível salvar a receita!');
@@ -49,6 +87,17 @@ export default function NovaReceita() {
 
       <Text style={styles.titulo}>Nova Receita</Text>
 
+      <TouchableOpacity style={styles.fotoBox} onPress={escolherFoto}>
+        {foto ? (
+          <Image source={{ uri: foto }} style={styles.foto} />
+        ) : (
+          <View style={styles.fotoPlaceholder}>
+            <Text style={styles.fotoEmoji}>📷</Text>
+            <Text style={styles.fotoTexto}>Adicionar foto</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
       <Text style={styles.label}>Nome da receita</Text>
       <TextInput style={styles.input} placeholder="Ex: Bolo de chocolate" placeholderTextColor="#aaa" value={titulo} onChangeText={setTitulo} />
 
@@ -59,7 +108,17 @@ export default function NovaReceita() {
       <TextInput style={styles.input} placeholder="Ex: 10" placeholderTextColor="#aaa" keyboardType="numeric" value={porcoes} onChangeText={setPorcoes} />
 
       <Text style={styles.label}>Dificuldade</Text>
-      <TextInput style={styles.input} placeholder="Fácil, Médio ou Difícil" placeholderTextColor="#aaa" value={dificuldade} onChangeText={setDificuldade} />
+      <View style={styles.dificuldadeRow}>
+        {dificuldades.map((d) => (
+          <TouchableOpacity
+            key={d}
+            style={[styles.dificuldadeBtn, dificuldade === d && styles.dificuldadeBtnSelecionado]}
+            onPress={() => setDificuldade(d)}
+          >
+            <Text style={[styles.dificuldadeBtnTexto, dificuldade === d && styles.dificuldadeBtnTextoSelecionado]}>{d}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <Text style={styles.label}>Ingredientes</Text>
       <TextInput style={[styles.input, styles.inputGrande]} placeholder="Liste os ingredientes, um por linha..." placeholderTextColor="#aaa" multiline value={ingredientes} onChangeText={setIngredientes} />
@@ -81,9 +140,19 @@ const styles = StyleSheet.create({
   voltar: { marginBottom: 16 },
   voltarTexto: { color: '#C2185B', fontSize: 16 },
   titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
+  fotoBox: { marginBottom: 24, borderRadius: 16, overflow: 'hidden' },
+  foto: { width: '100%', height: 200, borderRadius: 16 },
+  fotoPlaceholder: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 16, height: 150, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
+  fotoEmoji: { fontSize: 40, marginBottom: 8 },
+  fotoTexto: { color: '#C2185B', fontSize: 14, fontWeight: '600' },
   label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 6 },
   input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16 },
   inputGrande: { height: 120, textAlignVertical: 'top' },
+  dificuldadeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  dificuldadeBtn: { flex: 1, borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 12, alignItems: 'center', backgroundColor: '#fff' },
+  dificuldadeBtnSelecionado: { backgroundColor: '#C2185B', borderColor: '#C2185B' },
+  dificuldadeBtnTexto: { fontSize: 14, fontWeight: '600', color: '#555' },
+  dificuldadeBtnTextoSelecionado: { color: '#fff' },
   botao: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 8 },
   botaoTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

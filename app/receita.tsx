@@ -11,59 +11,89 @@ export default function Receita() {
   const [novoComentario, setNovoComentario] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [favorito, setFavorito] = useState(false);
+  const [avaliacao, setAvaliacao] = useState(0);
+  const [minhaAvaliacao, setMinhaAvaliacao] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    carregarReceita();
-    carregarComentarios();
+    carregarTudo();
   }, [id]);
 
-  async function carregarReceita() {
-    const { data, error } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (!error && data) setReceita(data);
-    setCarregando(false);
-  }
+  async function carregarTudo() {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUserId(user?.id || null);
 
-  async function carregarComentarios() {
-    const { data } = await supabase
+    const { data: receitaData } = await supabase.from('receitas').select('*').eq('id', id).single();
+    if (receitaData) setReceita(receitaData);
+
+    const { data: comentariosData } = await supabase
       .from('comentarios')
       .select('*, perfis(nome)')
       .eq('receita_id', id)
       .order('created_at', { ascending: false });
-    if (data) setComentarios(data);
+    if (comentariosData) setComentarios(comentariosData);
+
+    if (user) {
+      const { data: favData } = await supabase
+        .from('favoritos')
+        .select('id')
+        .eq('usuario_id', user.id)
+        .eq('receita_id', id)
+        .single();
+      setFavorito(!!favData);
+
+      const { data: avalData } = await supabase
+        .from('avaliacoes')
+        .select('nota')
+        .eq('usuario_id', user.id)
+        .eq('receita_id', id)
+        .single();
+      if (avalData) setMinhaAvaliacao(avalData.nota);
+    }
+
+    const { data: avaliacoes } = await supabase
+      .from('avaliacoes')
+      .select('nota')
+      .eq('receita_id', id);
+    if (avaliacoes && avaliacoes.length > 0) {
+      const media = avaliacoes.reduce((acc, a) => acc + a.nota, 0) / avaliacoes.length;
+      setAvaliacao(Math.round(media));
+    }
+
+    setCarregando(false);
+  }
+
+  async function toggleFavorito() {
+    if (!userId) { Alert.alert('Atenção', 'Faça login para favoritar!'); return; }
+    if (favorito) {
+      await supabase.from('favoritos').delete().eq('usuario_id', userId).eq('receita_id', id);
+      setFavorito(false);
+    } else {
+      await supabase.from('favoritos').insert({ usuario_id: userId, receita_id: id });
+      setFavorito(true);
+    }
+  }
+
+  async function avaliar(nota: number) {
+    if (!userId) { Alert.alert('Atenção', 'Faça login para avaliar!'); return; }
+    await supabase.from('avaliacoes').upsert({ usuario_id: userId, receita_id: id, nota });
+    setMinhaAvaliacao(nota);
+    Alert.alert('Obrigada!', `Você avaliou com ${nota} estrela${nota > 1 ? 's' : ''}!`);
   }
 
   async function enviarComentario() {
     if (!novoComentario.trim()) return;
+    if (!userId) { Alert.alert('Atenção', 'Faça login para comentar!'); return; }
     setEnviando(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      Alert.alert('Atenção', 'Faça login para comentar!');
-      setEnviando(false);
-      return;
-    }
-    const { error } = await supabase.from('comentarios').insert({
-      receita_id: id,
-      usuario_id: user.id,
-      texto: novoComentario,
-    });
-    if (!error) {
-      setNovoComentario('');
-      carregarComentarios();
-    }
+    await supabase.from('comentarios').insert({ receita_id: id, usuario_id: userId, texto: novoComentario });
+    setNovoComentario('');
+    carregarTudo();
     setEnviando(false);
   }
 
-  if (carregando) {
-    return <View style={styles.loading}><ActivityIndicator color="#C2185B" size="large" /></View>;
-  }
-
-  if (!receita) {
-    return <View style={styles.loading}><Text>Receita não encontrada.</Text></View>;
-  }
+  if (carregando) return <View style={styles.loading}><ActivityIndicator color="#C2185B" size="large" /></View>;
+  if (!receita) return <View style={styles.loading}><Text>Receita não encontrada.</Text></View>;
 
   const ingredientes = receita.ingredientes?.split('\n') || [];
   const passos = receita.modo_preparo?.split('.').filter((p: string) => p.trim()) || [];
@@ -76,7 +106,20 @@ export default function Receita() {
 
       <Text style={styles.emoji}>{receita.emoji}</Text>
       <Text style={styles.titulo}>{receita.titulo}</Text>
-      <Text style={styles.categoria}>🏷️ {receita.dificuldade}</Text>
+
+      <View style={styles.acoes}>
+        <TouchableOpacity style={styles.favBtn} onPress={toggleFavorito}>
+          <Text style={styles.favEmoji}>{favorito ? '❤️' : '🤍'}</Text>
+          <Text style={styles.favTexto}>{favorito ? 'Favoritado' : 'Favoritar'}</Text>
+        </TouchableOpacity>
+        <View style={styles.avaliacaoBox}>
+          {[1, 2, 3, 4, 5].map((estrela) => (
+            <TouchableOpacity key={estrela} onPress={() => avaliar(estrela)}>
+              <Text style={styles.estrela}>{estrela <= (minhaAvaliacao || avaliacao) ? '⭐' : '☆'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
       <View style={styles.infoRow}>
         <View style={styles.infoBox}>
@@ -107,7 +150,6 @@ export default function Receita() {
       ))}
 
       <Text style={styles.secao}>Comentários</Text>
-
       <View style={styles.comentarioBox}>
         <TextInput
           style={styles.comentarioInput}
@@ -144,8 +186,13 @@ const styles = StyleSheet.create({
   voltar: { marginBottom: 16 },
   voltarTexto: { color: '#C2185B', fontSize: 16 },
   emoji: { fontSize: 64, textAlign: 'center', marginBottom: 12 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 6 },
-  categoria: { fontSize: 14, color: '#C2185B', textAlign: 'center', marginBottom: 24 },
+  titulo: { fontSize: 26, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 16 },
+  acoes: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  favBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  favEmoji: { fontSize: 24 },
+  favTexto: { fontSize: 14, color: '#C2185B', fontWeight: '600' },
+  avaliacaoBox: { flexDirection: 'row', gap: 4 },
+  estrela: { fontSize: 24 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   infoBox: { alignItems: 'center' },
   infoValor: { fontSize: 16, fontWeight: 'bold', color: '#C2185B' },

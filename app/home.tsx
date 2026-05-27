@@ -29,6 +29,9 @@ export default function Home() {
           <TouchableOpacity onPress={() => router.push('/busca')} style={styles.iconBtn}>
             <Text style={styles.iconTexto}>🔍</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/favoritos')} style={styles.iconBtn}>
+            <Text style={styles.iconTexto}>❤️</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/perfil')} style={styles.iconBtn}>
             <Text style={styles.iconTexto}>👤</Text>
           </TouchableOpacity>
