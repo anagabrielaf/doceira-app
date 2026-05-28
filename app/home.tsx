@@ -29,6 +29,9 @@ export default function Home() {
           <TouchableOpacity onPress={() => router.push('/busca')} style={styles.iconBtn}>
             <Text style={styles.iconTexto}>🔍</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/notificacoes')} style={styles.iconBtn}>
+            <Text style={styles.iconTexto}>🔔</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/favoritos')} style={styles.iconBtn}>
             <Text style={styles.iconTexto}>❤️</Text>
           </TouchableOpacity>
@@ -41,8 +44,8 @@ export default function Home() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.atalhos}>
         {[
           { emoji: '🏷️', label: 'Categorias', rota: '/categorias' },
-          { emoji: '⭐', label: 'Melhores', rota: '/busca' },
-          { emoji: '🆕', label: 'Novidades', rota: '/busca' },
+          { emoji: '❤️', label: 'Favoritos', rota: '/favoritos' },
+          { emoji: '🔔', label: 'Avisos', rota: '/notificacoes' },
           { emoji: '🎂', label: 'Bolos', rota: '/categorias' },
           { emoji: '🍫', label: 'Bombons', rota: '/categorias' },
         ].map((item, i) => (
