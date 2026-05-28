@@ -38,6 +38,21 @@ export default function Home() {
         </View>
       </View>
 
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.atalhos}>
+        {[
+          { emoji: '🏷️', label: 'Categorias', rota: '/categorias' },
+          { emoji: '⭐', label: 'Melhores', rota: '/busca' },
+          { emoji: '🆕', label: 'Novidades', rota: '/busca' },
+          { emoji: '🎂', label: 'Bolos', rota: '/categorias' },
+          { emoji: '🍫', label: 'Bombons', rota: '/categorias' },
+        ].map((item, i) => (
+          <TouchableOpacity key={i} style={styles.atalhoBtn} onPress={() => router.push(item.rota as any)}>
+            <Text style={styles.atalhoEmoji}>{item.emoji}</Text>
+            <Text style={styles.atalhoTexto}>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       <Text style={styles.subtitulo}>Receitas em destaque</Text>
 
       {carregando ? (
@@ -66,11 +81,15 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerTitulo: { fontSize: 22, fontWeight: 'bold', color: '#C2185B' },
   headerIcons: { flexDirection: 'row', gap: 8 },
   iconBtn: { padding: 4 },
   iconTexto: { fontSize: 26 },
+  atalhos: { marginBottom: 20, flexGrow: 0 },
+  atalhoBtn: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, padding: 12, marginRight: 10, borderWidth: 1.5, borderColor: '#F8BBD9', minWidth: 70 },
+  atalhoEmoji: { fontSize: 24, marginBottom: 4 },
+  atalhoTexto: { fontSize: 11, fontWeight: '600', color: '#555' },
   subtitulo: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 16 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardEmoji: { fontSize: 36, marginRight: 16 },
