@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function PainelEditor() {
   const router = useRouter();
@@ -13,24 +13,21 @@ export default function PainelEditor() {
   }, []);
 
   async function carregarReceitas() {
-    const { data, error } = await supabase
-      .from('receitas')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) Alert.alert('Erro ao carregar', error.message);
-    if (data) setReceitas(data);
+    try {
+      const data = await api.getReceitas();
+      setReceitas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar as receitas!');
+    }
     setCarregando(false);
   }
 
   async function togglePublicar(receita: any) {
-    const { error } = await supabase
-      .from('receitas')
-      .update({ publicada: !receita.publicada })
-      .eq('id', receita.id);
-    if (error) {
-      Alert.alert('Erro', error.message);
-    } else {
+    try {
+      await api.atualizarReceita(receita.id, { publicada: !receita.publicada });
       carregarReceitas();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar a receita!');
     }
   }
 
@@ -43,7 +40,7 @@ export default function PainelEditor() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Painel do Editor</Text>
+      <Text style={styles.titulo}>📋 Aprovar Receitas</Text>
 
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
@@ -59,8 +56,6 @@ export default function PainelEditor() {
           <Text style={styles.statLabel}>Pendentes</Text>
         </View>
       </View>
-
-      <Text style={styles.secao}>Gerenciar Receitas</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
@@ -100,7 +95,6 @@ const styles = StyleSheet.create({
   statBox: { alignItems: 'center' },
   statValor: { fontSize: 22, fontWeight: 'bold', color: '#C2185B' },
   statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
-  secao: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardEmoji: { fontSize: 28, marginRight: 12 },
   cardInfo: { flex: 1 },

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api, getUsuarioLogado } from '../lib/api';
 
 export default function Notificacoes() {
   const router = useRouter();
@@ -13,56 +13,30 @@ export default function Notificacoes() {
   }, []);
 
   async function carregarNotificacoes() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const usuario = await getUsuarioLogado();
+      if (!usuario) return;
 
-    // Buscar receitas do usuário que foram publicadas recentemente
-    const { data: receitasPublicadas } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('autor_id', user.id)
-      .eq('publicada', true)
-      .order('created_at', { ascending: false });
+      const receitas = await api.getReceitas();
+      const minhasReceitas = Array.isArray(receitas)
+        ? receitas.filter((r: any) => r.autorId === usuario.id)
+        : [];
 
-    // Buscar comentários nas receitas do usuário
-    const { data: minhasReceitas } = await supabase
-      .from('receitas')
-      .select('id, titulo')
-      .eq('autor_id', user.id);
-
-    const receitaIds = minhasReceitas?.map(r => r.id) || [];
-
-    let comentariosRecentes: any[] = [];
-    if (receitaIds.length > 0) {
-      const { data: comentarios } = await supabase
-        .from('comentarios')
-        .select('*, perfis(nome), receitas(titulo)')
-        .in('receita_id', receitaIds)
-        .neq('usuario_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      comentariosRecentes = comentarios || [];
-    }
-
-    const notifs = [
-      ...(receitasPublicadas || []).map(r => ({
+      const notifs = minhasReceitas.map((r: any) => ({
         id: `pub_${r.id}`,
         tipo: 'publicacao',
-        titulo: '✅ Receita publicada!',
-        mensagem: `Sua receita "${r.titulo}" foi publicada com sucesso!`,
-        data: r.created_at,
-      })),
-      ...comentariosRecentes.map(c => ({
-        id: `com_${c.id}`,
-        tipo: 'comentario',
-        titulo: '💬 Novo comentário!',
-        mensagem: `${c.perfis?.nome} comentou em "${c.receitas?.titulo}"`,
-        data: c.created_at,
-        receitaId: c.receita_id,
-      })),
-    ].sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+        titulo: r.publicada ? '✅ Receita publicada!' : '⏳ Receita pendente',
+        mensagem: r.publicada
+          ? `Sua receita "${r.titulo}" foi publicada!`
+          : `Sua receita "${r.titulo}" está aguardando aprovação.`,
+        data: r.createdAt,
+        receitaId: r.id,
+      }));
 
-    setNotificacoes(notifs);
+      setNotificacoes(notifs);
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
+    }
     setCarregando(false);
   }
 

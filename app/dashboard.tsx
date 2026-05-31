@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -13,18 +13,21 @@ export default function Dashboard() {
   }, []);
 
   async function carregarStats() {
-    const [usuarios, receitas, comentarios, categorias] = await Promise.all([
-      supabase.from('perfis').select('*', { count: 'exact', head: true }),
-      supabase.from('receitas').select('*', { count: 'exact', head: true }),
-      supabase.from('comentarios').select('*', { count: 'exact', head: true }),
-      supabase.from('categorias').select('*', { count: 'exact', head: true }),
-    ]);
-    setStats({
-      usuarios: usuarios.count || 0,
-      receitas: receitas.count || 0,
-      comentarios: comentarios.count || 0,
-      categorias: categorias.count || 0,
-    });
+    try {
+      const [usuarios, receitas, categorias] = await Promise.all([
+        api.getUsuarios(),
+        api.getReceitas(),
+        api.getCategorias(),
+      ]);
+      setStats({
+        usuarios: Array.isArray(usuarios) ? usuarios.length : 0,
+        receitas: Array.isArray(receitas) ? receitas.length : 0,
+        comentarios: 0,
+        categorias: Array.isArray(categorias) ? categorias.length : 0,
+      });
+    } catch (error) {
+      console.error('Erro ao carregar stats:', error);
+    }
     setCarregando(false);
   }
 
@@ -34,7 +37,7 @@ export default function Dashboard() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Dashboard Admin</Text>
+      <Text style={styles.titulo}>📊 Dashboard Admin</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />

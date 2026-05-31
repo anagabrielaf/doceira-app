@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function GerenciarUsuarios() {
   const router = useRouter();
@@ -13,12 +13,12 @@ export default function GerenciarUsuarios() {
   }, []);
 
   async function carregarUsuarios() {
-    const { data, error } = await supabase
-      .from('perfis')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) Alert.alert('Erro', error.message);
-    if (data) setUsuarios(data);
+    try {
+      const data = await api.getUsuarios();
+      setUsuarios(Array.isArray(data) ? data : []);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar os usuários!');
+    }
     setCarregando(false);
   }
 
@@ -27,15 +27,18 @@ export default function GerenciarUsuarios() {
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('perfis').delete().eq('id', id);
-          if (error) Alert.alert('Erro', error.message);
-          else carregarUsuarios();
+          try {
+            await api.deletarUsuario(id);
+            carregarUsuarios();
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível excluir o usuário!');
+          }
         }
       }
     ]);
   }
 
-  const emojis: any = { leitor: '👤', confeiteira: '👩‍🍳', confeiteiro: '👨‍🍳', editor: '📋', admin: '⚙️' };
+  const emojis: any = { leitor: '👤', confeiteira: '👩‍🍳', admin: '⚙️' };
 
   return (
     <ScrollView style={styles.container}>
@@ -43,7 +46,7 @@ export default function GerenciarUsuarios() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Gerenciar Usuários</Text>
+      <Text style={styles.titulo}>👥 Gerenciar Usuários</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function GerenciarComentarios() {
   const router = useRouter();
@@ -13,12 +13,12 @@ export default function GerenciarComentarios() {
   }, []);
 
   async function carregarComentarios() {
-    const { data, error } = await supabase
-      .from('comentarios')
-      .select('*, perfis(nome), receitas(titulo)')
-      .order('created_at', { ascending: false });
-    if (error) Alert.alert('Erro', error.message);
-    if (data) setComentarios(data);
+    try {
+      const data = await api.getComentarios(0);
+      setComentarios(Array.isArray(data) ? data : []);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar os comentários!');
+    }
     setCarregando(false);
   }
 
@@ -27,9 +27,12 @@ export default function GerenciarComentarios() {
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('comentarios').delete().eq('id', id);
-          if (error) Alert.alert('Erro', error.message);
-          else carregarComentarios();
+          try {
+            await api.deletarComentario(id);
+            carregarComentarios();
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível excluir o comentário!');
+          }
         }
       }
     ]);
@@ -41,7 +44,7 @@ export default function GerenciarComentarios() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Gerenciar Comentários</Text>
+      <Text style={styles.titulo}>💬 Gerenciar Comentários</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
@@ -53,8 +56,8 @@ export default function GerenciarComentarios() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardEmoji}>💬</Text>
               <View style={styles.cardHeaderInfo}>
-                <Text style={styles.cardUsuario}>{comentario.perfis?.nome || 'Usuário'}</Text>
-                <Text style={styles.cardReceita}>em {comentario.receitas?.titulo || 'Receita'}</Text>
+                <Text style={styles.cardUsuario}>Usuário {comentario.usuarioId}</Text>
+                <Text style={styles.cardReceita}>Receita #{comentario.receitaId}</Text>
               </View>
               <TouchableOpacity style={styles.botaoExcluir} onPress={() => excluirComentario(comentario.id)}>
                 <Text style={styles.botaoExcluirTexto}>🗑️</Text>

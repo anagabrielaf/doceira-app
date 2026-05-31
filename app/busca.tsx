@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Busca() {
   const router = useRouter();
@@ -14,12 +14,15 @@ export default function Busca() {
     if (!busca.trim()) return;
     setCarregando(true);
     setBuscou(true);
-    const { data } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('publicada', true)
-      .ilike('titulo', `%${busca}%`);
-    setReceitas(data || []);
+    try {
+      const data = await api.getReceitas();
+      const filtradas = Array.isArray(data)
+        ? data.filter((r: any) => r.titulo.toLowerCase().includes(busca.toLowerCase()))
+        : [];
+      setReceitas(filtradas);
+    } catch (error) {
+      setReceitas([]);
+    }
     setCarregando(false);
   }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Categorias() {
   const router = useRouter();
@@ -16,20 +16,27 @@ export default function Categorias() {
   }, []);
 
   async function carregarCategorias() {
-    const { data } = await supabase.from('categorias').select('*').order('nome');
-    setCategorias(data || []);
+    try {
+      const data = await api.getCategorias();
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
     setCarregando(false);
   }
 
   async function filtrarPorCategoria(categoriaId: number) {
     setCategoriaSelecionada(categoriaId);
     setCarregandoReceitas(true);
-    const { data } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('categoria_id', categoriaId)
-      .eq('publicada', true);
-    setReceitas(data || []);
+    try {
+      const data = await api.getReceitas();
+      const filtradas = Array.isArray(data)
+        ? data.filter((r: any) => r.categoriaId === categoriaId)
+        : [];
+      setReceitas(filtradas);
+    } catch (error) {
+      setReceitas([]);
+    }
     setCarregandoReceitas(false);
   }
 

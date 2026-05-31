@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function GerenciarCategorias() {
   const router = useRouter();
@@ -14,22 +14,23 @@ export default function GerenciarCategorias() {
   }, []);
 
   async function carregarCategorias() {
-    const { data, error } = await supabase
-      .from('categorias')
-      .select('*')
-      .order('nome', { ascending: true });
-    if (error) Alert.alert('Erro', error.message);
-    if (data) setCategorias(data);
+    try {
+      const data = await api.getCategorias();
+      setCategorias(Array.isArray(data) ? data : []);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar as categorias!');
+    }
     setCarregando(false);
   }
 
   async function adicionarCategoria() {
     if (!novaCategoria.trim()) return;
-    const { error } = await supabase.from('categorias').insert({ nome: novaCategoria, emoji: '🍰' });
-    if (error) Alert.alert('Erro', error.message);
-    else {
+    try {
+      await api.criarCategoria({ nome: novaCategoria, emoji: '🍰' });
       setNovaCategoria('');
       carregarCategorias();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível adicionar a categoria!');
     }
   }
 
@@ -38,9 +39,12 @@ export default function GerenciarCategorias() {
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('categorias').delete().eq('id', id);
-          if (error) Alert.alert('Erro', error.message);
-          else carregarCategorias();
+          try {
+            await api.deletarCategoria(id);
+            carregarCategorias();
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível excluir a categoria!');
+          }
         }
       }
     ]);
@@ -52,7 +56,7 @@ export default function GerenciarCategorias() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Gerenciar Categorias</Text>
+      <Text style={styles.titulo}>🏷️ Gerenciar Categorias</Text>
 
       <View style={styles.novaCategoria}>
         <TextInput

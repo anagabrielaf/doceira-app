@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../lib/supabase';
+import { api, getUsuarioLogado } from '../lib/api';
 
 export default function NovaReceita() {
   const router = useRouter();
@@ -12,27 +11,9 @@ export default function NovaReceita() {
   const [dificuldade, setDificuldade] = useState('Fácil');
   const [ingredientes, setIngredientes] = useState('');
   const [modoPreparo, setModoPreparo] = useState('');
-  const [foto, setFoto] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   const dificuldades = ['Fácil', 'Médio', 'Difícil'];
-
-  async function escolherFoto() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos de acesso à sua galeria!');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      setFoto(result.assets[0].uri);
-    }
-  }
 
   async function publicarReceita() {
     if (!titulo || !ingredientes || !modoPreparo) {
@@ -40,43 +21,31 @@ export default function NovaReceita() {
       return;
     }
     setCarregando(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const usuario = await getUsuarioLogado();
+      const { error } = await api.criarReceita({
+        titulo,
+        tempo,
+        porcoes: parseInt(porcoes) || 0,
+        dificuldade,
+        ingredientes,
+        modoPreparo,
+        emoji: '🍰',
+        publicada: false,
+        autorId: usuario?.id,
+      });
 
-    let fotoUrl = null;
-    if (foto) {
-      const fileName = `receita_${Date.now()}.jpg`;
-      const response = await fetch(foto);
-      const blob = await response.blob();
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('fotos')
-        .upload(fileName, blob, { contentType: 'image/jpeg' });
-      if (!uploadError && uploadData) {
-        const { data: urlData } = supabase.storage.from('fotos').getPublicUrl(fileName);
-        fotoUrl = urlData.publicUrl;
+      if (error) {
+        Alert.alert('Erro', error);
+      } else {
+        Alert.alert('Sucesso!', 'Receita enviada para revisão!', [
+          { text: 'OK', onPress: () => router.push('/perfil') }
+        ]);
       }
-    }
-
-    const { error } = await supabase.from('receitas').insert({
-      titulo,
-      tempo,
-      porcoes: parseInt(porcoes) || 0,
-      dificuldade,
-      ingredientes,
-      modo_preparo: modoPreparo,
-      emoji: '🍰',
-      foto_url: fotoUrl,
-      publicada: false,
-      autor_id: user?.id,
-    });
-
-    setCarregando(false);
-    if (error) {
+    } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar a receita!');
-    } else {
-      Alert.alert('Sucesso!', 'Receita enviada para revisão!', [
-        { text: 'OK', onPress: () => router.push('/perfil') }
-      ]);
     }
+    setCarregando(false);
   }
 
   return (
@@ -86,17 +55,6 @@ export default function NovaReceita() {
       </TouchableOpacity>
 
       <Text style={styles.titulo}>Nova Receita</Text>
-
-      <TouchableOpacity style={styles.fotoBox} onPress={escolherFoto}>
-        {foto ? (
-          <Image source={{ uri: foto }} style={styles.foto} />
-        ) : (
-          <View style={styles.fotoPlaceholder}>
-            <Text style={styles.fotoEmoji}>📷</Text>
-            <Text style={styles.fotoTexto}>Adicionar foto</Text>
-          </View>
-        )}
-      </TouchableOpacity>
 
       <Text style={styles.label}>Nome da receita</Text>
       <TextInput style={styles.input} placeholder="Ex: Bolo de chocolate" placeholderTextColor="#aaa" value={titulo} onChangeText={setTitulo} />
@@ -140,11 +98,6 @@ const styles = StyleSheet.create({
   voltar: { marginBottom: 16 },
   voltarTexto: { color: '#C2185B', fontSize: 16 },
   titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
-  fotoBox: { marginBottom: 24, borderRadius: 16, overflow: 'hidden' },
-  foto: { width: '100%', height: 200, borderRadius: 16 },
-  fotoPlaceholder: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 16, height: 150, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
-  fotoEmoji: { fontSize: 40, marginBottom: 8 },
-  fotoTexto: { color: '#C2185B', fontSize: 14, fontWeight: '600' },
   label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 6 },
   input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16 },
   inputGrande: { height: 120, textAlignVertical: 'top' },

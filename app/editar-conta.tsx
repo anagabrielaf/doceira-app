@@ -1,28 +1,26 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api, getUsuarioLogado, salvarUsuario, removerToken } from '../lib/api';
 
 export default function EditarConta() {
   const router = useRouter();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [userId, setUserId] = useState('');
 
   useEffect(() => {
     carregarPerfil();
   }, []);
 
   async function carregarPerfil() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from('perfis').select('*').eq('id', user.id).single();
-    if (data) {
-      setNome(data.nome);
-      setEmail(data.email);
+    const usuario = await getUsuarioLogado();
+    if (usuario) {
+      setNome(usuario.nome);
+      setEmail(usuario.email);
+      setUserId(usuario.id);
     }
     setCarregando(false);
   }
@@ -32,40 +30,21 @@ export default function EditarConta() {
       Alert.alert('Atenção', 'O nome não pode estar vazio!');
       return;
     }
-    if (novaSenha && novaSenha !== confirmarSenha) {
-      Alert.alert('Atenção', 'As senhas não coincidem!');
-      return;
-    }
-    if (novaSenha && novaSenha.length < 6) {
-      Alert.alert('Atenção', 'A senha deve ter pelo menos 6 caracteres!');
-      return;
-    }
     setSalvando(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error: perfilError } = await supabase
-      .from('perfis')
-      .update({ nome })
-      .eq('id', user.id);
-
-    if (novaSenha) {
-      const { error: senhaError } = await supabase.auth.updateUser({ password: novaSenha });
-      if (senhaError) {
-        setSalvando(false);
-        Alert.alert('Erro', 'Não foi possível atualizar a senha!');
-        return;
+    try {
+      const data = await api.atualizarUsuario(userId, { nome });
+      if (data.error) {
+        Alert.alert('Erro', data.error);
+      } else {
+        await salvarUsuario(data);
+        Alert.alert('Sucesso!', 'Perfil atualizado com sucesso!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
       }
-    }
-
-    setSalvando(false);
-    if (perfilError) {
+    } catch (error) {
       Alert.alert('Erro', 'Não foi possível atualizar o perfil!');
-    } else {
-      Alert.alert('Sucesso!', 'Perfil atualizado com sucesso!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
     }
+    setSalvando(false);
   }
 
   async function excluirConta() {
@@ -76,11 +55,13 @@ export default function EditarConta() {
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir', style: 'destructive', onPress: async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            await supabase.from('perfis').delete().eq('id', user.id);
-            await supabase.auth.signOut();
-            router.push('/');
+            try {
+              await api.deletarUsuario(userId);
+              await removerToken();
+              router.push('/');
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível excluir a conta!');
+            }
           }
         }
       ]
@@ -114,26 +95,6 @@ export default function EditarConta() {
         editable={false}
       />
       <Text style={styles.dica}>O e-mail não pode ser alterado.</Text>
-
-      <Text style={styles.label}>Nova senha</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Deixe em branco para manter a atual"
-        placeholderTextColor="#aaa"
-        secureTextEntry
-        value={novaSenha}
-        onChangeText={setNovaSenha}
-      />
-
-      <Text style={styles.label}>Confirmar nova senha</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Confirme a nova senha"
-        placeholderTextColor="#aaa"
-        secureTextEntry
-        value={confirmarSenha}
-        onChangeText={setConfirmarSenha}
-      />
 
       <TouchableOpacity style={styles.botao} onPress={salvar} disabled={salvando}>
         {salvando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Salvar Alterações</Text>}

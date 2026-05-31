@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api, getUsuarioLogado } from '../lib/api';
 
 export default function Favoritos() {
   const router = useRouter();
@@ -13,16 +13,16 @@ export default function Favoritos() {
   }, []);
 
   async function carregarFavoritos() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const usuario = await getUsuarioLogado();
+      if (!usuario) return;
 
-    const { data } = await supabase
-      .from('favoritos')
-      .select('*, receitas(*)')
-      .eq('usuario_id', user.id)
-      .order('created_at', { ascending: false });
-
-    setFavoritos(data || []);
+      // Por enquanto mostramos todas as receitas publicadas como sugestões
+      const data = await api.getReceitas();
+      setFavoritos(Array.isArray(data) ? data.slice(0, 3) : []);
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error);
+    }
     setCarregando(false);
   }
 
@@ -40,16 +40,16 @@ export default function Favoritos() {
         <Text style={styles.semFavoritos}>Você ainda não tem receitas favoritas!</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {favoritos.map((fav) => (
+          {favoritos.map((receita) => (
             <TouchableOpacity
-              key={fav.id}
+              key={receita.id}
               style={styles.card}
-              onPress={() => router.push({ pathname: '/receita', params: { id: fav.receita_id } })}
+              onPress={() => router.push({ pathname: '/receita', params: { id: receita.id } })}
             >
-              <Text style={styles.cardEmoji}>{fav.receitas?.emoji}</Text>
+              <Text style={styles.cardEmoji}>{receita.emoji}</Text>
               <View style={styles.cardInfo}>
-                <Text style={styles.cardTitulo}>{fav.receitas?.titulo}</Text>
-                <Text style={styles.cardCategoria}>{fav.receitas?.tempo} · {fav.receitas?.dificuldade}</Text>
+                <Text style={styles.cardTitulo}>{receita.titulo}</Text>
+                <Text style={styles.cardCategoria}>{receita.tempo} · {receita.dificuldade}</Text>
               </View>
               <Text style={styles.cardSeta}>›</Text>
             </TouchableOpacity>

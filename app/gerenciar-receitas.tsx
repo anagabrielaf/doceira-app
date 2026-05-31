@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function GerenciarReceitas() {
   const router = useRouter();
@@ -13,12 +13,12 @@ export default function GerenciarReceitas() {
   }, []);
 
   async function carregarReceitas() {
-    const { data, error } = await supabase
-      .from('receitas')
-      .select('*, perfis(nome)')
-      .order('created_at', { ascending: false });
-    if (error) Alert.alert('Erro', error.message);
-    if (data) setReceitas(data);
+    try {
+      const data = await api.getReceitas();
+      setReceitas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar as receitas!');
+    }
     setCarregando(false);
   }
 
@@ -27,9 +27,12 @@ export default function GerenciarReceitas() {
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Excluir', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('receitas').delete().eq('id', id);
-          if (error) Alert.alert('Erro', error.message);
-          else carregarReceitas();
+          try {
+            await api.deletarReceita(id);
+            carregarReceitas();
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível excluir a receita!');
+          }
         }
       }
     ]);
@@ -41,7 +44,7 @@ export default function GerenciarReceitas() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>Gerenciar Receitas</Text>
+      <Text style={styles.titulo}>🧁 Gerenciar Receitas</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
@@ -53,7 +56,6 @@ export default function GerenciarReceitas() {
             <Text style={styles.cardEmoji}>{receita.emoji}</Text>
             <View style={styles.cardInfo}>
               <Text style={styles.cardTitulo}>{receita.titulo}</Text>
-              <Text style={styles.cardAutor}>por {receita.perfis?.nome || 'Anônimo'}</Text>
               <Text style={[styles.cardStatus, receita.publicada ? styles.publicada : styles.pendente]}>
                 {receita.publicada ? '✅ Publicada' : '⏳ Pendente'}
               </Text>
@@ -80,7 +82,6 @@ const styles = StyleSheet.create({
   cardEmoji: { fontSize: 32, marginRight: 12 },
   cardInfo: { flex: 1 },
   cardTitulo: { fontSize: 15, fontWeight: 'bold', color: '#333' },
-  cardAutor: { fontSize: 12, color: '#888', marginTop: 2 },
   cardStatus: { fontSize: 12, marginTop: 4 },
   publicada: { color: '#4CAF50' },
   pendente: { color: '#FF9800' },
