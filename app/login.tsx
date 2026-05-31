@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api, salvarToken, salvarUsuario } from '../lib/api';
 
 export default function Login() {
   const router = useRouter();
@@ -15,13 +15,19 @@ export default function Login() {
       return;
     }
     setCarregando(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-    setCarregando(false);
-    if (error) {
-      Alert.alert('Erro', 'E-mail ou senha incorretos!');
-    } else {
-      router.push('/home');
+    try {
+      const data = await api.login(email, senha);
+      if (data.error) {
+        Alert.alert('Erro', data.error);
+      } else {
+        await salvarToken(data.token);
+        await salvarUsuario(data.perfil);
+        router.push('/home');
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor!');
     }
+    setCarregando(false);
   }
 
   return (
@@ -68,59 +74,13 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF5F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  voltar: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-  },
-  voltarTexto: {
-    color: '#C2185B',
-    fontSize: 16,
-  },
-  emoji: {
-    fontSize: 56,
-    marginBottom: 12,
-  },
-  titulo: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#C2185B',
-    marginBottom: 32,
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1.5,
-    borderColor: '#F8BBD9',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    fontSize: 15,
-    color: '#333',
-    backgroundColor: '#fff',
-  },
-  botao: {
-    backgroundColor: '#C2185B',
-    paddingVertical: 14,
-    borderRadius: 30,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 8,
-  },
-  botaoTexto: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  link: {
-    color: '#C2185B',
-    fontSize: 14,
-  },
+  container: { flex: 1, backgroundColor: '#FFF5F7', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  voltar: { position: 'absolute', top: 60, left: 24 },
+  voltarTexto: { color: '#C2185B', fontSize: 16 },
+  emoji: { fontSize: 56, marginBottom: 12 },
+  titulo: { fontSize: 28, fontWeight: 'bold', color: '#C2185B', marginBottom: 32 },
+  input: { width: '100%', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, marginBottom: 16, fontSize: 15, color: '#333', backgroundColor: '#fff' },
+  botao: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center', marginBottom: 16, marginTop: 8 },
+  botaoTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  link: { color: '#C2185B', fontSize: 14 },
 });

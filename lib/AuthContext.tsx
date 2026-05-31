@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from './supabase';
+import { getUsuarioLogado, removerToken } from './api';
 
 type Perfil = {
   id: string;
   nome: string;
   email: string;
-  tipo: 'leitor' | 'confeiteira' | 'editor' | 'admin';
+  tipo: 'leitor' | 'confeiteira' | 'admin';
 };
 
 type AuthContextType = {
@@ -13,9 +13,9 @@ type AuthContextType = {
   carregando: boolean;
   isLeitor: boolean;
   isConfeiteira: boolean;
-  isEditor: boolean;
   isAdmin: boolean;
   recarregar: () => void;
+  sair: () => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,9 +23,9 @@ const AuthContext = createContext<AuthContextType>({
   carregando: true,
   isLeitor: false,
   isConfeiteira: false,
-  isEditor: false,
   isAdmin: false,
   recarregar: () => {},
+  sair: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -33,23 +33,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [carregando, setCarregando] = useState(true);
 
   async function carregarPerfil() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setPerfil(null);
-      setCarregando(false);
-      return;
-    }
-    const { data } = await supabase.from('perfis').select('*').eq('id', user.id).single();
-    setPerfil(data || null);
+    const usuario = await getUsuarioLogado();
+    setPerfil(usuario || null);
     setCarregando(false);
+  }
+
+  async function sair() {
+    await removerToken();
+    setPerfil(null);
   }
 
   useEffect(() => {
     carregarPerfil();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      carregarPerfil();
-    });
-    return () => subscription.unsubscribe();
   }, []);
 
   return (
@@ -58,9 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       carregando,
       isLeitor: perfil?.tipo === 'leitor',
       isConfeiteira: perfil?.tipo === 'confeiteira',
-      isEditor: perfil?.tipo === 'editor',
       isAdmin: perfil?.tipo === 'admin',
       recarregar: carregarPerfil,
+      sair,
     }}>
       {children}
     </AuthContext.Provider>

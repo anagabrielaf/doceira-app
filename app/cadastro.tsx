@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api, salvarToken, salvarUsuario } from '../lib/api';
 
 const tipos = [
-  { valor: 'leitor', label: '👤 Leitor', desc: 'Visualiza e comenta receitas' },
-  { valor: 'confeiteira', label: '👩‍🍳 Confeiteira', desc: 'Cria e compartilha receitas' },
-  { valor: 'editor', label: '📋 Editor', desc: 'Gerencia e publica receitas' },
+  { valor: 'leitor', label: '👤 Leitor', desc: 'Visualiza, comenta e favorita receitas' },
+  { valor: 'confeiteira', label: '👩‍🍳 Confeiteira', desc: 'Cria e compartilha suas receitas' },
 ];
 
 export default function Cadastro() {
@@ -32,24 +31,21 @@ export default function Cadastro() {
       return;
     }
     setCarregando(true);
-    const { data, error } = await supabase.auth.signUp({ email, password: senha });
-    if (error) {
-      setCarregando(false);
-      Alert.alert('Erro', error.message);
-      return;
-    }
-    if (data.user) {
-      await supabase.from('perfis').insert({
-        id: data.user.id,
-        nome,
-        email,
-        tipo,
-      });
+    try {
+      const data = await api.cadastro({ nome, email, senha, tipo });
+      if (data.error) {
+        Alert.alert('Erro', data.error);
+      } else {
+        await salvarToken(data.token);
+        await salvarUsuario(data.perfil);
+        Alert.alert('Sucesso!', 'Conta criada com sucesso!', [
+          { text: 'OK', onPress: () => router.push('/home') }
+        ]);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor!');
     }
     setCarregando(false);
-    Alert.alert('Sucesso!', 'Conta criada com sucesso!', [
-      { text: 'OK', onPress: () => router.push('/home') }
-    ]);
   }
 
   return (

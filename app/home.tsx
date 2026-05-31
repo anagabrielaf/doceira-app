@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Home() {
   const router = useRouter();
@@ -13,11 +13,12 @@ export default function Home() {
   }, []);
 
   async function carregarReceitas() {
-    const { data, error } = await supabase
-      .from('receitas')
-      .select('*')
-      .eq('publicada', true);
-    if (!error && data) setReceitas(data);
+    try {
+      const data = await api.getReceitas();
+      setReceitas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erro ao carregar receitas:', error);
+    }
     setCarregando(false);
   }
 
@@ -60,6 +61,8 @@ export default function Home() {
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
+      ) : receitas.length === 0 ? (
+        <Text style={styles.semReceitas}>Nenhuma receita disponível.</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {receitas.map((receita) => (
@@ -94,6 +97,7 @@ const styles = StyleSheet.create({
   atalhoEmoji: { fontSize: 24, marginBottom: 4 },
   atalhoTexto: { fontSize: 11, fontWeight: '600', color: '#555' },
   subtitulo: { fontSize: 18, fontWeight: '600', color: '#333', marginBottom: 16 },
+  semReceitas: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardEmoji: { fontSize: 36, marginRight: 16 },
   cardInfo: { flex: 1 },

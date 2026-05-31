@@ -6,7 +6,7 @@ import { useAuth } from '../lib/AuthContext';
 
 export default function Perfil() {
   const router = useRouter();
-  const { perfil: authPerfil, isEditor, isAdmin, isConfeiteira } = useAuth();
+  const { perfil: authPerfil, isConfeiteira, isAdmin } = useAuth();
   const [receitas, setReceitas] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -31,6 +31,12 @@ export default function Perfil() {
     return <View style={styles.loading}><ActivityIndicator color="#C2185B" size="large" /></View>;
   }
 
+  const tipoLabel: any = {
+    leitor: '👤 Leitor',
+    confeiteira: '👩‍🍳 Confeiteira',
+    admin: '⚙️ Admin',
+  };
+
   return (
     <ScrollView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.voltar}>
@@ -38,32 +44,37 @@ export default function Perfil() {
       </TouchableOpacity>
 
       <View style={styles.avatarBox}>
-        <Text style={styles.avatar}>👩‍🍳</Text>
+        <Text style={styles.avatar}>
+          {authPerfil?.tipo === 'admin' ? '⚙️' : authPerfil?.tipo === 'confeiteira' ? '👩‍🍳' : '👤'}
+        </Text>
         <Text style={styles.nome}>{authPerfil?.nome || 'Usuário'}</Text>
         <Text style={styles.email}>{authPerfil?.email}</Text>
-        <Text style={styles.badge}>{authPerfil?.tipo || 'Leitor'}</Text>
+        <Text style={styles.badge}>{tipoLabel[authPerfil?.tipo || 'leitor']}</Text>
         <TouchableOpacity style={styles.botaoEditar} onPress={() => router.push('/editar-conta')}>
           <Text style={styles.botaoEditarTexto}>✏️ Editar Conta</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statValor}>{receitas.length}</Text>
-          <Text style={styles.statLabel}>Receitas</Text>
+      {/* Stats — apenas para confeiteira e admin */}
+      {(isConfeiteira || isAdmin) && (
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValor}>{receitas.length}</Text>
+            <Text style={styles.statLabel}>Receitas</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValor}>{receitas.filter(r => r.publicada).length}</Text>
+            <Text style={styles.statLabel}>Publicadas</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValor}>{receitas.filter(r => !r.publicada).length}</Text>
+            <Text style={styles.statLabel}>Pendentes</Text>
+          </View>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statValor}>{receitas.filter(r => r.publicada).length}</Text>
-          <Text style={styles.statLabel}>Publicadas</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statValor}>{receitas.filter(r => !r.publicada).length}</Text>
-          <Text style={styles.statLabel}>Pendentes</Text>
-        </View>
-      </View>
+      )}
 
-      {/* Minhas Receitas - visível para confeiteira, editor e admin */}
-      {(isConfeiteira || isEditor || isAdmin) && (
+      {/* Minhas Receitas — apenas confeiteira e admin */}
+      {(isConfeiteira || isAdmin) && (
         <>
           <Text style={styles.secao}>Minhas Receitas</Text>
           {receitas.length === 0 ? (
@@ -88,18 +99,16 @@ export default function Perfil() {
         </>
       )}
 
-      {/* Painel do Editor - visível para editor e admin */}
-      {(isEditor || isAdmin) && (
-        <TouchableOpacity style={styles.botaoEditor} onPress={() => router.push('/painel-editor')}>
-          <Text style={styles.botaoEditorTexto}>📋 Painel do Editor</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Dashboard - visível apenas para admin */}
+      {/* Painel Admin — apenas admin */}
       {isAdmin && (
-        <TouchableOpacity style={styles.botaoDashboard} onPress={() => router.push('/dashboard')}>
-          <Text style={styles.botaoDashboardTexto}>📊 Dashboard Admin</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity style={styles.botaoAdmin} onPress={() => router.push('/painel-editor')}>
+            <Text style={styles.botaoAdminTexto}>📋 Aprovar Receitas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.botaoDashboard} onPress={() => router.push('/dashboard')}>
+            <Text style={styles.botaoDashboardTexto}>📊 Dashboard</Text>
+          </TouchableOpacity>
+        </>
       )}
 
       <TouchableOpacity style={styles.botaoSair} onPress={sair}>
@@ -137,12 +146,12 @@ const styles = StyleSheet.create({
   publicada: { color: '#4CAF50' },
   pendente: { color: '#FF9800' },
   cardSeta: { fontSize: 24, color: '#ccc' },
-  botaoEditor: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoEditorTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoNova: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoNovaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoAdmin: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
+  botaoAdminTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
+  botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   botaoSair: { borderWidth: 2, borderColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
   botaoSairTexto: { color: '#C2185B', fontSize: 16, fontWeight: 'bold' },
 });
