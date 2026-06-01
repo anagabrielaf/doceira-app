@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function Busca() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function Busca() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>🔍 Buscar Receitas</Text>
+      <Text style={styles.titulo}>Buscar Receitas</Text>
 
       <View style={styles.buscaBox}>
         <TextInput
@@ -78,17 +79,17 @@ export default function Busca() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
   buscaBox: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  input: { flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333' },
+  input: { flex: 1, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', fontFamily: fonts.regular },
   botaoBuscar: { backgroundColor: '#C2185B', paddingHorizontal: 20, borderRadius: 12, justifyContent: 'center' },
-  botaoBuscarTexto: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  semResultados: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  botaoBuscarTexto: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
+  semResultados: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40, fontFamily: fonts.regular, fontStyle: 'italic' },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F8BBD9' },
   cardEmoji: { fontSize: 36, marginRight: 16 },
   cardInfo: { flex: 1 },
-  cardTitulo: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  cardCategoria: { fontSize: 13, color: '#C2185B', marginTop: 4 },
-  cardSeta: { fontSize: 24, color: '#ccc' },
+  cardTitulo: { fontSize: 16, fontFamily: fonts.bold, color: '#333' },
+  cardCategoria: { fontSize: 13, color: '#C2185B', marginTop: 4, fontFamily: fonts.regular, fontStyle: 'italic' },
+  cardSeta: { fontSize: 24, color: '#F8BBD9' },
 });

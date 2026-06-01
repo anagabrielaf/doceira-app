@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, getUsuarioLogado, salvarUsuario, removerToken } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function EditarConta() {
   const router = useRouter();
@@ -48,24 +49,20 @@ export default function EditarConta() {
   }
 
   async function excluirConta() {
-    Alert.alert(
-      'Excluir conta',
-      'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita!',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir', style: 'destructive', onPress: async () => {
-            try {
-              await api.deletarUsuario(userId);
-              await removerToken();
-              router.push('/');
-            } catch (error) {
-              Alert.alert('Erro', 'Não foi possível excluir a conta!');
-            }
+    Alert.alert('Excluir conta', 'Tem certeza que deseja excluir sua conta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir', style: 'destructive', onPress: async () => {
+          try {
+            await api.deletarUsuario(userId);
+            await removerToken();
+            router.push('/');
+          } catch (error) {
+            Alert.alert('Erro', 'Não foi possível excluir a conta!');
           }
         }
-      ]
-    );
+      }
+    ]);
   }
 
   if (carregando) {
@@ -81,19 +78,10 @@ export default function EditarConta() {
       <Text style={styles.titulo}>Editar Conta</Text>
 
       <Text style={styles.label}>Nome</Text>
-      <TextInput
-        style={styles.input}
-        value={nome}
-        onChangeText={setNome}
-        placeholderTextColor="#aaa"
-      />
+      <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#aaa" />
 
       <Text style={styles.label}>E-mail</Text>
-      <TextInput
-        style={[styles.input, styles.inputDisabled]}
-        value={email}
-        editable={false}
-      />
+      <TextInput style={[styles.input, styles.inputDisabled]} value={email} editable={false} />
       <Text style={styles.dica}>O e-mail não pode ser alterado.</Text>
 
       <TouchableOpacity style={styles.botao} onPress={salvar} disabled={salvando}>
@@ -113,14 +101,14 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF5F7' },
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 6 },
-  input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
+  label: { fontSize: 14, color: '#555', marginBottom: 6, fontFamily: fonts.bold },
+  input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16, fontFamily: fonts.regular },
   inputDisabled: { backgroundColor: '#f5f5f5', color: '#aaa' },
-  dica: { fontSize: 12, color: '#aaa', marginTop: -12, marginBottom: 16 },
+  dica: { fontSize: 12, color: '#aaa', marginTop: -12, marginBottom: 16, fontFamily: fonts.regular, fontStyle: 'italic' },
   botao: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 8, marginBottom: 12 },
-  botaoTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
   botaoExcluir: { borderWidth: 2, borderColor: '#e53935', paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
-  botaoExcluirTexto: { color: '#e53935', fontSize: 16, fontWeight: 'bold' },
+  botaoExcluirTexto: { color: '#e53935', fontSize: 16, fontFamily: fonts.bold },
 });

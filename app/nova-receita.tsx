@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function NovaReceita() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NovaReceita() {
     setCarregando(true);
     try {
       const usuario = await getUsuarioLogado();
-      const { error } = await api.criarReceita({
+      await api.criarReceita({
         titulo,
         tempo,
         porcoes: parseInt(porcoes) || 0,
@@ -34,14 +35,9 @@ export default function NovaReceita() {
         publicada: false,
         autorId: usuario?.id,
       });
-
-      if (error) {
-        Alert.alert('Erro', error);
-      } else {
-        Alert.alert('Sucesso!', 'Receita enviada para revisão!', [
-          { text: 'OK', onPress: () => router.push('/perfil') }
-        ]);
-      }
+      Alert.alert('Sucesso!', 'Receita enviada para revisão!', [
+        { text: 'OK', onPress: () => router.push('/perfil') }
+      ]);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível salvar a receita!');
     }
@@ -96,16 +92,16 @@ export default function NovaReceita() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 6 },
-  input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
+  label: { fontSize: 14, color: '#555', marginBottom: 6, fontFamily: fonts.bold },
+  input: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, fontSize: 15, color: '#333', marginBottom: 16, fontFamily: fonts.regular },
   inputGrande: { height: 120, textAlignVertical: 'top' },
   dificuldadeRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   dificuldadeBtn: { flex: 1, borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 12, alignItems: 'center', backgroundColor: '#fff' },
   dificuldadeBtnSelecionado: { backgroundColor: '#C2185B', borderColor: '#C2185B' },
-  dificuldadeBtnTexto: { fontSize: 14, fontWeight: '600', color: '#555' },
+  dificuldadeBtnTexto: { fontSize: 14, fontFamily: fonts.bold, color: '#555' },
   dificuldadeBtnTextoSelecionado: { color: '#fff' },
   botao: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 8 },
-  botaoTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
 });

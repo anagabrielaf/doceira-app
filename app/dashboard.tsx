@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function Dashboard() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>📊 Dashboard Admin</Text>
+      <Text style={styles.titulo}>Dashboard</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
@@ -74,11 +75,7 @@ export default function Dashboard() {
         { titulo: 'Comentários', emoji: '💬', rota: '/gerenciar-comentarios' },
         { titulo: 'Categorias', emoji: '🏷️', rota: '/gerenciar-categorias' },
       ].map((item, i) => (
-        <TouchableOpacity
-          key={i}
-          style={styles.card}
-          onPress={() => router.push(item.rota as any)}
-        >
+        <TouchableOpacity key={i} style={styles.card} onPress={() => router.push(item.rota as any)}>
           <Text style={styles.cardEmoji}>{item.emoji}</Text>
           <Text style={styles.cardTitulo}>{item.titulo}</Text>
           <Text style={styles.cardSeta}>›</Text>
@@ -93,16 +90,16 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24 },
-  statBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, width: '48%', alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  statBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, width: '48%', alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#F8BBD9' },
   statEmoji: { fontSize: 28, marginBottom: 6 },
-  statValor: { fontSize: 24, fontWeight: 'bold', color: '#C2185B' },
-  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
-  secao: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  statValor: { fontSize: 24, color: '#C2185B', fontFamily: fonts.bold },
+  statLabel: { fontSize: 12, color: '#888', marginTop: 4, fontFamily: fonts.regular },
+  secao: { fontSize: 22, color: '#C2185B', marginBottom: 12, fontFamily: fonts.cursiva },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F8BBD9' },
   cardEmoji: { fontSize: 28, marginRight: 12 },
-  cardTitulo: { flex: 1, fontSize: 16, fontWeight: '600', color: '#333' },
-  cardSeta: { fontSize: 24, color: '#ccc' },
+  cardTitulo: { flex: 1, fontSize: 16, fontFamily: fonts.bold, color: '#333' },
+  cardSeta: { fontSize: 24, color: '#F8BBD9' },
 });

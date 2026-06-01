@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function Receita() {
   const router = useRouter();
@@ -39,11 +40,7 @@ export default function Receita() {
     }
     setEnviando(true);
     try {
-      await api.criarComentario({
-        receitaId: Number(id),
-        usuarioId: usuario.id,
-        texto: novoComentario,
-      });
+      await api.criarComentario({ receitaId: Number(id), usuarioId: usuario.id, texto: novoComentario });
       setNovoComentario('');
       const comentariosData = await api.getComentarios(Number(id));
       setComentarios(Array.isArray(comentariosData) ? comentariosData : []);
@@ -83,12 +80,12 @@ export default function Receita() {
         </View>
       </View>
 
-      <Text style={styles.secao}>Ingredientes</Text>
+      <Text style={styles.secao}>~ Ingredientes ~</Text>
       {ingredientes.map((item: string, i: number) => (
         <Text key={i} style={styles.item}>• {item}</Text>
       ))}
 
-      <Text style={styles.secao}>Modo de preparo</Text>
+      <Text style={styles.secao}>~ Modo de Preparo ~</Text>
       {passos.map((passo: string, i: number) => (
         <View key={i} style={styles.passoBox}>
           <Text style={styles.passoNum}>{i + 1}</Text>
@@ -96,7 +93,7 @@ export default function Receita() {
         </View>
       ))}
 
-      <Text style={styles.secao}>Comentários</Text>
+      <Text style={styles.secao}>~ Comentários ~</Text>
       <View style={styles.comentarioBox}>
         <TextInput
           style={styles.comentarioInput}
@@ -112,7 +109,7 @@ export default function Receita() {
       </View>
 
       {comentarios.length === 0 ? (
-        <Text style={styles.semComentarios}>Seja o primeiro a comentar!</Text>
+        <Text style={styles.semComentarios}>Seja a primeira a comentar!</Text>
       ) : (
         comentarios.map((comentario) => (
           <View key={comentario.id} style={styles.comentario}>
@@ -131,24 +128,24 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF5F7' },
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   emoji: { fontSize: 64, textAlign: 'center', marginBottom: 12 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 16 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  titulo: { fontSize: 32, color: '#333', textAlign: 'center', marginBottom: 16, fontFamily: fonts.cursiva },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: '#F8BBD9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   infoBox: { alignItems: 'center' },
-  infoValor: { fontSize: 16, fontWeight: 'bold', color: '#C2185B' },
-  infoLabel: { fontSize: 12, color: '#888', marginTop: 4 },
-  secao: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12, marginTop: 8 },
-  item: { fontSize: 15, color: '#555', marginBottom: 8, lineHeight: 22 },
+  infoValor: { fontSize: 16, color: '#C2185B', fontFamily: fonts.bold },
+  infoLabel: { fontSize: 12, color: '#888', marginTop: 4, fontFamily: fonts.regular },
+  secao: { fontSize: 20, color: '#C2185B', marginBottom: 12, marginTop: 8, textAlign: 'center', fontFamily: fonts.cursiva },
+  item: { fontSize: 15, color: '#555', marginBottom: 8, lineHeight: 22, fontFamily: fonts.regular },
   passoBox: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
-  passoNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#C2185B', color: '#fff', textAlign: 'center', lineHeight: 28, fontWeight: 'bold', fontSize: 14 },
-  passoTexto: { flex: 1, fontSize: 15, color: '#555', lineHeight: 22 },
-  comentarioBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  comentarioInput: { fontSize: 15, color: '#333', minHeight: 60, textAlignVertical: 'top', marginBottom: 10 },
+  passoNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#C2185B', color: '#fff', textAlign: 'center', lineHeight: 28, fontFamily: fonts.bold, fontSize: 14 },
+  passoTexto: { flex: 1, fontSize: 15, color: '#555', lineHeight: 22, fontFamily: fonts.regular },
+  comentarioBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F8BBD9' },
+  comentarioInput: { fontSize: 15, color: '#333', minHeight: 60, textAlignVertical: 'top', marginBottom: 10, fontFamily: fonts.regular },
   botaoEnviar: { backgroundColor: '#C2185B', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
-  botaoEnviarTexto: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  semComentarios: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 16 },
-  comentario: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  comentarioNome: { fontSize: 14, fontWeight: 'bold', color: '#C2185B', marginBottom: 6 },
-  comentarioTexto: { fontSize: 14, color: '#555', lineHeight: 20 },
+  botaoEnviarTexto: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
+  semComentarios: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 16, fontFamily: fonts.regular, fontStyle: 'italic' },
+  comentario: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F8BBD9' },
+  comentarioNome: { fontSize: 14, color: '#C2185B', marginBottom: 6, fontFamily: fonts.bold },
+  comentarioTexto: { fontSize: 14, color: '#555', lineHeight: 20, fontFamily: fonts.regular },
 });

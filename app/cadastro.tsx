@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, salvarToken, salvarUsuario } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 const tipos = [
   { valor: 'leitor', label: '👤 Leitor', desc: 'Visualiza, comenta e favorita receitas' },
@@ -54,7 +55,8 @@ export default function Cadastro() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.emoji}>🧁</Text>
+      <Image source={require('../assets/doce.png')} style={styles.imagem} />
+
       <Text style={styles.titulo}>Criar conta</Text>
 
       <TextInput style={styles.input} placeholder="Nome completo" placeholderTextColor="#aaa" value={nome} onChangeText={setNome} />
@@ -88,16 +90,16 @@ export default function Cadastro() {
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#FFF5F7', alignItems: 'center', justifyContent: 'center', padding: 24 },
   voltar: { position: 'absolute', top: 60, left: 24 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  emoji: { fontSize: 56, marginBottom: 12 },
-  titulo: { fontSize: 28, fontWeight: 'bold', color: '#C2185B', marginBottom: 32 },
-  input: { width: '100%', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, marginBottom: 16, fontSize: 15, color: '#333', backgroundColor: '#fff' },
-  label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 10, alignSelf: 'flex-start' },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  imagem: { width: 100, height: 100, resizeMode: 'contain', marginBottom: 12 },
+  titulo: { fontSize: 36, color: '#C2185B', marginBottom: 32, fontFamily: fonts.cursiva },
+  input: { width: '100%', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, marginBottom: 16, fontSize: 15, color: '#333', backgroundColor: '#fff', fontFamily: fonts.regular },
+  label: { fontSize: 14, color: '#555', marginBottom: 10, alignSelf: 'flex-start', fontFamily: fonts.bold },
   tipoCard: { width: '100%', borderWidth: 1.5, borderColor: '#F8BBD9', borderRadius: 12, padding: 14, marginBottom: 10, backgroundColor: '#fff' },
   tipoCardSelecionado: { borderColor: '#C2185B', backgroundColor: '#FFF0F5' },
-  tipoLabel: { fontSize: 15, fontWeight: 'bold', color: '#333' },
-  tipoDesc: { fontSize: 12, color: '#888', marginTop: 2 },
+  tipoLabel: { fontSize: 15, fontFamily: fonts.bold, color: '#333' },
+  tipoDesc: { fontSize: 12, color: '#888', marginTop: 2, fontFamily: fonts.regular },
   botao: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center', marginBottom: 16, marginTop: 16 },
-  botaoTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  link: { color: '#C2185B', fontSize: 14 },
+  botaoTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
+  link: { color: '#C2185B', fontSize: 14, fontFamily: fonts.regular },
 });

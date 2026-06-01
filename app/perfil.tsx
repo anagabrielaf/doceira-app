@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
+import { api, removerToken, getUsuarioLogado } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function Perfil() {
   const router = useRouter();
@@ -11,19 +12,25 @@ export default function Perfil() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    carregarReceitas();
+    carregarDados();
   }, []);
 
-  async function carregarReceitas() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from('receitas').select('*').eq('autor_id', user.id);
-    setReceitas(data || []);
+  async function carregarDados() {
+    try {
+      const usuario = await getUsuarioLogado();
+      if (usuario?.id) {
+        const data = await api.getReceitas();
+        const minhas = Array.isArray(data) ? data.filter((r: any) => r.autorId === usuario.id) : [];
+        setReceitas(minhas);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+    }
     setCarregando(false);
   }
 
   async function sair() {
-    await supabase.auth.signOut();
+    await removerToken();
     router.push('/');
   }
 
@@ -55,7 +62,6 @@ export default function Perfil() {
         </TouchableOpacity>
       </View>
 
-      {/* Stats — apenas para confeiteira e admin */}
       {(isConfeiteira || isAdmin) && (
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
@@ -73,7 +79,6 @@ export default function Perfil() {
         </View>
       )}
 
-      {/* Minhas Receitas — apenas confeiteira e admin */}
       {(isConfeiteira || isAdmin) && (
         <>
           <Text style={styles.secao}>Minhas Receitas</Text>
@@ -99,7 +104,6 @@ export default function Perfil() {
         </>
       )}
 
-      {/* Painel Admin — apenas admin */}
       {isAdmin && (
         <>
           <TouchableOpacity style={styles.botaoAdmin} onPress={() => router.push('/painel-editor')}>
@@ -124,34 +128,34 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF5F7' },
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   avatarBox: { alignItems: 'center', marginBottom: 24 },
   avatar: { fontSize: 72, marginBottom: 8 },
-  nome: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-  email: { fontSize: 14, color: '#888', marginBottom: 8 },
-  badge: { backgroundColor: '#F8BBD9', color: '#C2185B', paddingHorizontal: 16, paddingVertical: 4, borderRadius: 20, fontSize: 13, fontWeight: '600', marginBottom: 12 },
+  nome: { fontSize: 28, color: '#333', fontFamily: fonts.cursiva },
+  email: { fontSize: 14, color: '#888', marginBottom: 8, fontFamily: fonts.regular },
+  badge: { backgroundColor: '#F8BBD9', color: '#C2185B', paddingHorizontal: 16, paddingVertical: 4, borderRadius: 20, fontSize: 13, fontFamily: fonts.bold, marginBottom: 12 },
   botaoEditar: { borderWidth: 1.5, borderColor: '#C2185B', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
-  botaoEditarTexto: { color: '#C2185B', fontSize: 14, fontWeight: '600' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  botaoEditarTexto: { color: '#C2185B', fontSize: 14, fontFamily: fonts.bold },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: '#F8BBD9' },
   statBox: { alignItems: 'center' },
-  statValor: { fontSize: 18, fontWeight: 'bold', color: '#C2185B' },
-  statLabel: { fontSize: 12, color: '#888', marginTop: 4 },
-  secao: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  semReceitas: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  statValor: { fontSize: 18, color: '#C2185B', fontFamily: fonts.bold },
+  statLabel: { fontSize: 12, color: '#888', marginTop: 4, fontFamily: fonts.regular },
+  secao: { fontSize: 22, color: '#C2185B', marginBottom: 12, fontFamily: fonts.cursiva },
+  semReceitas: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 16, fontFamily: fonts.regular, fontStyle: 'italic' },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F8BBD9' },
   cardEmoji: { fontSize: 28, marginRight: 12 },
   cardInfo: { flex: 1 },
-  cardTitulo: { fontSize: 15, fontWeight: '600', color: '#333' },
-  cardStatus: { fontSize: 12, marginTop: 4 },
+  cardTitulo: { fontSize: 15, fontFamily: fonts.bold, color: '#333' },
+  cardStatus: { fontSize: 12, marginTop: 4, fontFamily: fonts.regular },
   publicada: { color: '#4CAF50' },
   pendente: { color: '#FF9800' },
-  cardSeta: { fontSize: 24, color: '#ccc' },
+  cardSeta: { fontSize: 24, color: '#F8BBD9' },
   botaoNova: { backgroundColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoNovaTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoNovaTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
   botaoAdmin: { backgroundColor: '#7B1FA2', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoAdminTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoAdminTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
   botaoDashboard: { backgroundColor: '#1565C0', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoDashboardTexto: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  botaoDashboardTexto: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
   botaoSair: { borderWidth: 2, borderColor: '#C2185B', paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginBottom: 12 },
-  botaoSairTexto: { color: '#C2185B', fontSize: 16, fontWeight: 'bold' },
+  botaoSairTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.bold },
 });

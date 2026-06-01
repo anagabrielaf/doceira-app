@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
+import { fonts } from '../lib/fonts';
 
 export default function Notificacoes() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function Notificacoes() {
         <Text style={styles.voltarTexto}>← Voltar</Text>
       </TouchableOpacity>
 
-      <Text style={styles.titulo}>🔔 Notificações</Text>
+      <Text style={styles.titulo}>Notificações</Text>
 
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
@@ -79,13 +80,13 @@ export default function Notificacoes() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF5F7', padding: 24, paddingTop: 60 },
   voltar: { marginBottom: 16 },
-  voltarTexto: { color: '#C2185B', fontSize: 16 },
-  titulo: { fontSize: 26, fontWeight: 'bold', color: '#C2185B', marginBottom: 24 },
-  semNotificacoes: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40 },
-  card: { borderRadius: 16, padding: 16, marginBottom: 12 },
+  voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
+  titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
+  semNotificacoes: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40, fontFamily: fonts.regular, fontStyle: 'italic' },
+  card: { borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F8BBD9' },
   cardPublicacao: { backgroundColor: '#E8F5E9' },
   cardComentario: { backgroundColor: '#FFF3E0' },
-  cardTitulo: { fontSize: 15, fontWeight: 'bold', color: '#333', marginBottom: 4 },
-  cardMensagem: { fontSize: 14, color: '#555', marginBottom: 8 },
-  cardData: { fontSize: 12, color: '#888' },
+  cardTitulo: { fontSize: 15, color: '#333', marginBottom: 4, fontFamily: fonts.bold },
+  cardMensagem: { fontSize: 14, color: '#555', marginBottom: 8, fontFamily: fonts.regular },
+  cardData: { fontSize: 12, color: '#888', fontFamily: fonts.regular, fontStyle: 'italic' },
 });
