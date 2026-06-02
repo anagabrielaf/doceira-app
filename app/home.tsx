@@ -46,10 +46,10 @@ export default function Home() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.atalhos}>
         {[
           { emoji: '🏷️', label: 'Categorias', rota: '/categorias' },
+          { emoji: '🧮', label: 'Conversor', rota: '/conversor' },
           { emoji: '❤️', label: 'Favoritos', rota: '/favoritos' },
           { emoji: '🔔', label: 'Avisos', rota: '/notificacoes' },
           { emoji: '🎂', label: 'Bolos', rota: '/categorias' },
-          { emoji: '🍫', label: 'Bombons', rota: '/categorias' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={styles.atalhoBtn} onPress={() => router.push(item.rota as any)}>
             <Text style={styles.atalhoEmoji}>{item.emoji}</Text>

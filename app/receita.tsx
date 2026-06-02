@@ -13,6 +13,7 @@ export default function Receita() {
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [usuario, setUsuario] = useState<any>(null);
+  const [porcoesAtuais, setPorcoesAtuais] = useState(0);
 
   useEffect(() => {
     carregarTudo();
@@ -24,6 +25,7 @@ export default function Receita() {
       setUsuario(user);
       const receitaData = await api.getReceita(Number(id));
       setReceita(receitaData);
+      setPorcoesAtuais(receitaData?.porcoes || 1);
       const comentariosData = await api.getComentarios(Number(id));
       setComentarios(Array.isArray(comentariosData) ? comentariosData : []);
     } catch (error) {
@@ -50,6 +52,21 @@ export default function Receita() {
     setEnviando(false);
   }
 
+  // Recalcula as quantidades dos ingredientes conforme as porções
+  function ajustarIngrediente(linha: string) {
+    const original = receita?.porcoes || 1;
+    const fator = porcoesAtuais / original;
+    if (fator === 1) return linha;
+    // Substitui números (inteiros, decimais ou frações simples) pela quantidade ajustada
+    return linha.replace(/(\d+(?:[.,]\d+)?)/g, (match) => {
+      const num = parseFloat(match.replace(',', '.'));
+      const ajustado = num * fator;
+      // Arredonda bonitinho: inteiro se for inteiro, senão 1 casa decimal
+      const formatado = Number.isInteger(ajustado) ? ajustado.toString() : ajustado.toFixed(1).replace('.', ',');
+      return formatado;
+    });
+  }
+
   if (carregando) return <View style={styles.loading}><ActivityIndicator color="#C2185B" size="large" /></View>;
   if (!receita) return <View style={styles.loading}><Text>Receita não encontrada.</Text></View>;
 
@@ -71,7 +88,7 @@ export default function Receita() {
           <Text style={styles.infoLabel}>Tempo</Text>
         </View>
         <View style={styles.infoBox}>
-          <Text style={styles.infoValor}>{receita.porcoes}</Text>
+          <Text style={styles.infoValor}>{porcoesAtuais}</Text>
           <Text style={styles.infoLabel}>Porções</Text>
         </View>
         <View style={styles.infoBox}>
@@ -80,9 +97,34 @@ export default function Receita() {
         </View>
       </View>
 
+      {/* Ajuste de porções */}
+      <View style={styles.porcoesBox}>
+        <Text style={styles.porcoesLabel}>Ajustar porções</Text>
+        <View style={styles.porcoesControle}>
+          <TouchableOpacity
+            style={styles.porcoesBtn}
+            onPress={() => setPorcoesAtuais((p) => Math.max(1, p - 1))}
+          >
+            <Text style={styles.porcoesBtnTexto}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.porcoesNumero}>{porcoesAtuais}</Text>
+          <TouchableOpacity
+            style={styles.porcoesBtn}
+            onPress={() => setPorcoesAtuais((p) => p + 1)}
+          >
+            <Text style={styles.porcoesBtnTexto}>+</Text>
+          </TouchableOpacity>
+        </View>
+        {porcoesAtuais !== receita.porcoes && (
+          <TouchableOpacity onPress={() => setPorcoesAtuais(receita.porcoes)}>
+            <Text style={styles.resetarTexto}>↺ Voltar ao original ({receita.porcoes})</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <Text style={styles.secao}>~ Ingredientes ~</Text>
       {ingredientes.map((item: string, i: number) => (
-        <Text key={i} style={styles.item}>• {item}</Text>
+        <Text key={i} style={styles.item}>• {ajustarIngrediente(item)}</Text>
       ))}
 
       <Text style={styles.secao}>~ Modo de Preparo ~</Text>
@@ -131,10 +173,17 @@ const styles = StyleSheet.create({
   voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   emoji: { fontSize: 64, textAlign: 'center', marginBottom: 12 },
   titulo: { fontSize: 32, color: '#333', textAlign: 'center', marginBottom: 16, fontFamily: fonts.cursiva },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: '#F8BBD9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F8BBD9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   infoBox: { alignItems: 'center' },
   infoValor: { fontSize: 16, color: '#C2185B', fontFamily: fonts.bold },
   infoLabel: { fontSize: 12, color: '#888', marginTop: 4, fontFamily: fonts.regular },
+  porcoesBox: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: '#F8BBD9', alignItems: 'center' },
+  porcoesLabel: { fontSize: 14, color: '#555', marginBottom: 10, fontFamily: fonts.bold },
+  porcoesControle: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  porcoesBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#C2185B', alignItems: 'center', justifyContent: 'center' },
+  porcoesBtnTexto: { color: '#fff', fontSize: 24, fontFamily: fonts.bold },
+  porcoesNumero: { fontSize: 24, color: '#C2185B', fontFamily: fonts.bold, minWidth: 40, textAlign: 'center' },
+  resetarTexto: { fontSize: 12, color: '#888', marginTop: 10, fontFamily: fonts.regular, fontStyle: 'italic' },
   secao: { fontSize: 20, color: '#C2185B', marginBottom: 12, marginTop: 8, textAlign: 'center', fontFamily: fonts.cursiva },
   item: { fontSize: 15, color: '#555', marginBottom: 8, lineHeight: 22, fontFamily: fonts.regular },
   passoBox: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
