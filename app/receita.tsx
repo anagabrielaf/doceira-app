@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
@@ -14,6 +14,9 @@ export default function Receita() {
   const [enviando, setEnviando] = useState(false);
   const [usuario, setUsuario] = useState<any>(null);
   const [porcoesAtuais, setPorcoesAtuais] = useState(0);
+  const [segundos, setSegundos] = useState(0);
+  const [timerAtivo, setTimerAtivo] = useState(false);
+  const intervalRef = useRef<any>(null);
 
   useEffect(() => {
     carregarTudo();
@@ -32,6 +35,48 @@ export default function Receita() {
       console.error('Erro ao carregar receita:', error);
     }
     setCarregando(false);
+  }
+
+  // Lógica do Timer
+  useEffect(() => {
+    if (timerAtivo && segundos > 0) {
+      intervalRef.current = setInterval(() => {
+        setSegundos((s) => {
+          if (s <= 1) {
+            clearInterval(intervalRef.current);
+            setTimerAtivo(false);
+            Alert.alert('⏰ Tempo esgotado!', 'Seu timer chegou ao fim!');
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [timerAtivo]);
+
+  function adicionarMinutos(min: number) {
+    setSegundos((s) => s + min * 60);
+  }
+
+  function toggleTimer() {
+    if (segundos === 0) {
+      Alert.alert('Atenção', 'Adicione tempo antes de iniciar!');
+      return;
+    }
+    setTimerAtivo((a) => !a);
+  }
+
+  function resetarTimer() {
+    clearInterval(intervalRef.current);
+    setTimerAtivo(false);
+    setSegundos(0);
+  }
+
+  function formatarTempo(s: number) {
+    const min = Math.floor(s / 60);
+    const seg = s % 60;
+    return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
   }
 
   async function enviarComentario() {
@@ -57,11 +102,9 @@ export default function Receita() {
     const original = receita?.porcoes || 1;
     const fator = porcoesAtuais / original;
     if (fator === 1) return linha;
-    // Substitui números (inteiros, decimais ou frações simples) pela quantidade ajustada
     return linha.replace(/(\d+(?:[.,]\d+)?)/g, (match) => {
       const num = parseFloat(match.replace(',', '.'));
       const ajustado = num * fator;
-      // Arredonda bonitinho: inteiro se for inteiro, senão 1 casa decimal
       const formatado = Number.isInteger(ajustado) ? ajustado.toString() : ajustado.toFixed(1).replace('.', ',');
       return formatado;
     });
@@ -101,17 +144,11 @@ export default function Receita() {
       <View style={styles.porcoesBox}>
         <Text style={styles.porcoesLabel}>Ajustar porções</Text>
         <View style={styles.porcoesControle}>
-          <TouchableOpacity
-            style={styles.porcoesBtn}
-            onPress={() => setPorcoesAtuais((p) => Math.max(1, p - 1))}
-          >
+          <TouchableOpacity style={styles.porcoesBtn} onPress={() => setPorcoesAtuais((p) => Math.max(1, p - 1))}>
             <Text style={styles.porcoesBtnTexto}>−</Text>
           </TouchableOpacity>
           <Text style={styles.porcoesNumero}>{porcoesAtuais}</Text>
-          <TouchableOpacity
-            style={styles.porcoesBtn}
-            onPress={() => setPorcoesAtuais((p) => p + 1)}
-          >
+          <TouchableOpacity style={styles.porcoesBtn} onPress={() => setPorcoesAtuais((p) => p + 1)}>
             <Text style={styles.porcoesBtnTexto}>+</Text>
           </TouchableOpacity>
         </View>
@@ -134,6 +171,36 @@ export default function Receita() {
           <Text style={styles.passoTexto}>{passo.trim()}.</Text>
         </View>
       ))}
+
+      {/* Timer */}
+      <Text style={styles.secao}>~ Timer ~</Text>
+      <View style={styles.timerBox}>
+        <Text style={styles.timerDisplay}>{formatarTempo(segundos)}</Text>
+
+        <View style={styles.timerAtalhos}>
+          <TouchableOpacity style={styles.timerAtalhoBtn} onPress={() => adicionarMinutos(1)}>
+            <Text style={styles.timerAtalhoTexto}>+1 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timerAtalhoBtn} onPress={() => adicionarMinutos(5)}>
+            <Text style={styles.timerAtalhoTexto}>+5 min</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timerAtalhoBtn} onPress={() => adicionarMinutos(10)}>
+            <Text style={styles.timerAtalhoTexto}>+10 min</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.timerControles}>
+          <TouchableOpacity
+            style={[styles.timerBtn, timerAtivo ? styles.timerBtnPausar : styles.timerBtnIniciar]}
+            onPress={toggleTimer}
+          >
+            <Text style={styles.timerBtnTexto}>{timerAtivo ? '⏸ Pausar' : '▶ Iniciar'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.timerBtnResetar} onPress={resetarTimer}>
+            <Text style={styles.timerBtnResetarTexto}>↺ Zerar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <Text style={styles.secao}>~ Comentários ~</Text>
       <View style={styles.comentarioBox}>
@@ -197,4 +264,16 @@ const styles = StyleSheet.create({
   comentario: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F8BBD9' },
   comentarioNome: { fontSize: 14, color: '#C2185B', marginBottom: 6, fontFamily: fonts.bold },
   comentarioTexto: { fontSize: 14, color: '#555', lineHeight: 20, fontFamily: fonts.regular },
+  timerBox: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: '#F8BBD9', alignItems: 'center' },
+  timerDisplay: { fontSize: 56, color: '#C2185B', fontFamily: fonts.bold, marginBottom: 16 },
+  timerAtalhos: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  timerAtalhoBtn: { backgroundColor: '#FFF0F5', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, borderWidth: 1, borderColor: '#F8BBD9' },
+  timerAtalhoTexto: { fontSize: 13, color: '#C2185B', fontFamily: fonts.bold },
+  timerControles: { flexDirection: 'row', gap: 12, width: '100%' },
+  timerBtn: { flex: 1, paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
+  timerBtnIniciar: { backgroundColor: '#4CAF50' },
+  timerBtnPausar: { backgroundColor: '#FF9800' },
+  timerBtnTexto: { color: '#fff', fontSize: 15, fontFamily: fonts.bold },
+  timerBtnResetar: { flex: 1, paddingVertical: 14, borderRadius: 30, alignItems: 'center', borderWidth: 2, borderColor: '#C2185B' },
+  timerBtnResetarTexto: { color: '#C2185B', fontSize: 15, fontFamily: fonts.bold },
 });
