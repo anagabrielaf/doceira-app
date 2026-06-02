@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../lib/fonts';
 
 export default function Receita() {
@@ -96,7 +97,17 @@ export default function Receita() {
     }
     setEnviando(false);
   }
-
+    async function adicionarNaLista(ingrediente: string) {
+    try {
+      const dados = await AsyncStorage.getItem('lista_compras');
+      const lista = dados ? JSON.parse(dados) : [];
+      lista.push({ id: Date.now().toString(), texto: ingrediente, comprado: false });
+      await AsyncStorage.setItem('lista_compras', JSON.stringify(lista));
+      Alert.alert('Adicionado!', `"${ingrediente}" foi para a lista de compras 🛒`);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível adicionar à lista!');
+    }
+  }
   // Recalcula as quantidades dos ingredientes conforme as porções
   function ajustarIngrediente(linha: string) {
     const original = receita?.porcoes || 1;
@@ -160,8 +171,12 @@ export default function Receita() {
       </View>
 
       <Text style={styles.secao}>~ Ingredientes ~</Text>
+      <Text style={styles.dicaIngrediente}>toque para adicionar à lista de compras 🛒</Text>
       {ingredientes.map((item: string, i: number) => (
-        <Text key={i} style={styles.item}>• {ajustarIngrediente(item)}</Text>
+        <TouchableOpacity key={i} style={styles.ingredienteItem} onPress={() => adicionarNaLista(ajustarIngrediente(item))}>
+          <Text style={styles.item}>• {ajustarIngrediente(item)}</Text>
+          <Text style={styles.maisIcone}>+</Text>
+        </TouchableOpacity>
       ))}
 
       <Text style={styles.secao}>~ Modo de Preparo ~</Text>
@@ -252,7 +267,10 @@ const styles = StyleSheet.create({
   porcoesNumero: { fontSize: 24, color: '#C2185B', fontFamily: fonts.bold, minWidth: 40, textAlign: 'center' },
   resetarTexto: { fontSize: 12, color: '#888', marginTop: 10, fontFamily: fonts.regular, fontStyle: 'italic' },
   secao: { fontSize: 20, color: '#C2185B', marginBottom: 12, marginTop: 8, textAlign: 'center', fontFamily: fonts.cursiva },
-  item: { fontSize: 15, color: '#555', marginBottom: 8, lineHeight: 22, fontFamily: fonts.regular },
+  item: { fontSize: 15, color: '#555', lineHeight: 22, fontFamily: fonts.regular, flex: 1 },
+  dicaIngrediente: { fontSize: 12, color: '#aaa', textAlign: 'center', marginBottom: 12, fontFamily: fonts.regular, fontStyle: 'italic' },
+  ingredienteItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 8, borderWidth: 1, borderColor: '#F8BBD9' },
+  maisIcone: { fontSize: 20, color: '#C2185B', fontFamily: fonts.bold },
   passoBox: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
   passoNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#C2185B', color: '#fff', textAlign: 'center', lineHeight: 28, fontFamily: fonts.bold, fontSize: 14 },
   passoTexto: { flex: 1, fontSize: 15, color: '#555', lineHeight: 22, fontFamily: fonts.regular },
