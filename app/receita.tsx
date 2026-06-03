@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert, Share } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,7 +38,6 @@ export default function Receita() {
     setCarregando(false);
   }
 
-  // Lógica do Timer
   useEffect(() => {
     if (timerAtivo && segundos > 0) {
       intervalRef.current = setInterval(() => {
@@ -97,7 +96,22 @@ export default function Receita() {
     }
     setEnviando(false);
   }
-    async function adicionarNaLista(ingrediente: string) {
+
+  async function compartilharReceita() {
+    try {
+      const ingredientesTexto = (receita.ingredientes || '').split('\n').map((i: string) => `• ${i}`).join('\n');
+      const mensagem = `🧁 ${receita.titulo}\n\n⏱ Tempo: ${receita.tempo}\n🍽 Porções: ${receita.porcoes}\n📊 Dificuldade: ${receita.dificuldade}\n\n📝 INGREDIENTES:\n${ingredientesTexto}\n\n👩‍🍳 MODO DE PREPARO:\n${receita.modoPreparo}\n\n— Receita do app Doceira 🍰`;
+
+      await Share.share({
+        message: mensagem,
+        title: receita.titulo,
+      });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível compartilhar a receita!');
+    }
+  }
+
+  async function adicionarNaLista(ingrediente: string) {
     try {
       const dados = await AsyncStorage.getItem('lista_compras');
       const lista = dados ? JSON.parse(dados) : [];
@@ -108,7 +122,7 @@ export default function Receita() {
       Alert.alert('Erro', 'Não foi possível adicionar à lista!');
     }
   }
-  // Recalcula as quantidades dos ingredientes conforme as porções
+
   function ajustarIngrediente(linha: string) {
     const original = receita?.porcoes || 1;
     const fator = porcoesAtuais / original;
@@ -151,7 +165,6 @@ export default function Receita() {
         </View>
       </View>
 
-      {/* Ajuste de porções */}
       <View style={styles.porcoesBox}>
         <Text style={styles.porcoesLabel}>Ajustar porções</Text>
         <View style={styles.porcoesControle}>
@@ -187,7 +200,6 @@ export default function Receita() {
         </View>
       ))}
 
-      {/* Timer */}
       <Text style={styles.secao}>~ Timer ~</Text>
       <View style={styles.timerBox}>
         <Text style={styles.timerDisplay}>{formatarTempo(segundos)}</Text>
@@ -242,7 +254,9 @@ export default function Receita() {
           </View>
         ))
       )}
-
+      <TouchableOpacity style={styles.botaoCompartilhar} onPress={compartilharReceita}>
+        <Text style={styles.botaoCompartilharTexto}>📤 Compartilhar Receita</Text>
+      </TouchableOpacity>
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -255,6 +269,8 @@ const styles = StyleSheet.create({
   voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   emoji: { fontSize: 64, textAlign: 'center', marginBottom: 12 },
   titulo: { fontSize: 32, color: '#333', textAlign: 'center', marginBottom: 16, fontFamily: fonts.cursiva },
+  botaoCompartilhar: { backgroundColor: '#C2185B', paddingVertical: 12, borderRadius: 30, alignItems: 'center', marginBottom: 20 },
+  botaoCompartilharTexto: { color: '#fff', fontSize: 15, fontFamily: fonts.bold },
   infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F8BBD9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   infoBox: { alignItems: 'center' },
   infoValor: { fontSize: 16, color: '#C2185B', fontFamily: fonts.bold },
