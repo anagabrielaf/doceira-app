@@ -42,11 +42,15 @@ export const api = {
   getCategorias: () => request('GET', '/categorias'),
   criarCategoria: (dados: any) => request('POST', '/categorias', dados),
   deletarCategoria: (id: number) => request('DELETE', `/categorias/${id}`),
-
-  // Comentarios
+// Comentarios
   getComentarios: (receitaId: number) => request('GET', `/comentarios/receita/${receitaId}`),
   criarComentario: (dados: any) => request('POST', '/comentarios', dados),
   deletarComentario: (id: number) => request('DELETE', `/comentarios/${id}`),
+  // Favoritos
+  getFavoritos: (usuarioId: string) => request('GET', `/favoritos/usuario/${usuarioId}`),
+  verificarFavorito: (usuarioId: string, receitaId: number) => request('GET', `/favoritos/verificar/${usuarioId}/${receitaId}`),
+  adicionarFavorito: (usuarioId: string, receitaId: number) => request('POST', '/favoritos', { usuarioId, receitaId }),
+  removerFavorito: (usuarioId: string, receitaId: number) => request('DELETE', `/favoritos/${usuarioId}/${receitaId}`),
 };
 
 export async function salvarToken(token: string) {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
 import { fonts } from '../lib/fonts';
 
@@ -9,18 +9,26 @@ export default function Favoritos() {
   const [favoritos, setFavoritos] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    carregarFavoritos();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregarFavoritos();
+    }, [])
+  );
 
   async function carregarFavoritos() {
+    setCarregando(true);
     try {
       const usuario = await getUsuarioLogado();
-      if (!usuario) return;
-      const data = await api.getReceitas();
-      setFavoritos(Array.isArray(data) ? data.slice(0, 3) : []);
+      if (!usuario) {
+        setFavoritos([]);
+        setCarregando(false);
+        return;
+      }
+      const data = await api.getFavoritos(usuario.id);
+      setFavoritos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar favoritos:', error);
+      setFavoritos([]);
     }
     setCarregando(false);
   }
@@ -36,19 +44,19 @@ export default function Favoritos() {
       {carregando ? (
         <ActivityIndicator color="#C2185B" size="large" style={{ marginTop: 40 }} />
       ) : favoritos.length === 0 ? (
-        <Text style={styles.semFavoritos}>Você ainda não tem receitas favoritas!</Text>
+        <Text style={styles.semFavoritos}>Você ainda não tem receitas favoritas!{'\n'}Toque no coração de uma receita 🤍</Text>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {favoritos.map((receita) => (
+          {favoritos.map((fav) => (
             <TouchableOpacity
-              key={receita.id}
+              key={fav.id}
               style={styles.card}
-              onPress={() => router.push({ pathname: '/receita', params: { id: receita.id } })}
+              onPress={() => router.push({ pathname: '/receita', params: { id: fav.receitaId } })}
             >
-              <Text style={styles.cardEmoji}>{receita.emoji}</Text>
+              <Text style={styles.cardEmoji}>{fav.emoji}</Text>
               <View style={styles.cardInfo}>
-                <Text style={styles.cardTitulo}>{receita.titulo}</Text>
-                <Text style={styles.cardCategoria}>{receita.tempo} · {receita.dificuldade}</Text>
+                <Text style={styles.cardTitulo}>{fav.titulo}</Text>
+                <Text style={styles.cardCategoria}>{fav.tempo} · {fav.dificuldade}</Text>
               </View>
               <Text style={styles.cardSeta}>›</Text>
             </TouchableOpacity>
@@ -64,7 +72,7 @@ const styles = StyleSheet.create({
   voltar: { marginBottom: 16 },
   voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   titulo: { fontSize: 32, color: '#C2185B', marginBottom: 24, fontFamily: fonts.cursiva },
-  semFavoritos: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40, fontFamily: fonts.regular, fontStyle: 'italic' },
+  semFavoritos: { fontSize: 15, color: '#888', textAlign: 'center', marginTop: 40, fontFamily: fonts.regular, fontStyle: 'italic', lineHeight: 24 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#F8BBD9' },
   cardEmoji: { fontSize: 36, marginRight: 16 },
   cardInfo: { flex: 1 },

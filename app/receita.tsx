@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Alert, Share } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api, getUsuarioLogado } from '../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fonts } from '../lib/fonts';
@@ -15,13 +15,16 @@ export default function Receita() {
   const [enviando, setEnviando] = useState(false);
   const [usuario, setUsuario] = useState<any>(null);
   const [porcoesAtuais, setPorcoesAtuais] = useState(0);
+  const [favorito, setFavorito] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [timerAtivo, setTimerAtivo] = useState(false);
   const intervalRef = useRef<any>(null);
 
-  useEffect(() => {
-    carregarTudo();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      carregarTudo();
+    }, [id])
+  );
 
   async function carregarTudo() {
     try {
@@ -32,10 +35,32 @@ export default function Receita() {
       setPorcoesAtuais(receitaData?.porcoes || 1);
       const comentariosData = await api.getComentarios(Number(id));
       setComentarios(Array.isArray(comentariosData) ? comentariosData : []);
+      if (user?.id) {
+        const fav = await api.verificarFavorito(user.id, Number(id));
+        setFavorito(fav?.favorito || false);
+      }
     } catch (error) {
       console.error('Erro ao carregar receita:', error);
     }
     setCarregando(false);
+  }
+
+  async function toggleFavorito() {
+    if (!usuario) {
+      Alert.alert('Atenção', 'Faça login para favoritar!');
+      return;
+    }
+    try {
+      if (favorito) {
+        await api.removerFavorito(usuario.id, Number(id));
+        setFavorito(false);
+      } else {
+        await api.adicionarFavorito(usuario.id, Number(id));
+        setFavorito(true);
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar o favorito!');
+    }
   }
 
   useEffect(() => {
@@ -150,6 +175,10 @@ export default function Receita() {
       <Text style={styles.emoji}>{receita.emoji}</Text>
       <Text style={styles.titulo}>{receita.titulo}</Text>
 
+      <TouchableOpacity style={[styles.botaoFavorito, favorito && styles.botaoFavoritoAtivo]} onPress={toggleFavorito}>
+        <Text style={styles.botaoFavoritoTexto}>{favorito ? '❤️ Favoritado' : '🤍 Favoritar'}</Text>
+      </TouchableOpacity>
+
       <View style={styles.infoRow}>
         <View style={styles.infoBox}>
           <Text style={styles.infoValor}>{receita.tempo}</Text>
@@ -249,11 +278,12 @@ export default function Receita() {
       ) : (
         comentarios.map((comentario) => (
           <View key={comentario.id} style={styles.comentario}>
-            <Text style={styles.comentarioNome}>👤 {comentario.usuarioId || 'Usuário'}</Text>
+            <Text style={styles.comentarioNome}>👤 {comentario.autorNome || 'Usuário'}</Text>
             <Text style={styles.comentarioTexto}>{comentario.texto}</Text>
           </View>
         ))
       )}
+
       <TouchableOpacity style={styles.botaoCompartilhar} onPress={compartilharReceita}>
         <Text style={styles.botaoCompartilharTexto}>📤 Compartilhar Receita</Text>
       </TouchableOpacity>
@@ -269,6 +299,9 @@ const styles = StyleSheet.create({
   voltarTexto: { color: '#C2185B', fontSize: 16, fontFamily: fonts.regular },
   emoji: { fontSize: 64, textAlign: 'center', marginBottom: 12 },
   titulo: { fontSize: 32, color: '#333', textAlign: 'center', marginBottom: 16, fontFamily: fonts.cursiva },
+  botaoFavorito: { backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#F8BBD9', paddingVertical: 12, borderRadius: 30, alignItems: 'center', marginBottom: 20 },
+  botaoFavoritoAtivo: { backgroundColor: '#FFF0F5', borderColor: '#C2185B' },
+  botaoFavoritoTexto: { color: '#C2185B', fontSize: 15, fontFamily: fonts.bold },
   botaoCompartilhar: { backgroundColor: '#C2185B', paddingVertical: 12, borderRadius: 30, alignItems: 'center', marginBottom: 20 },
   botaoCompartilharTexto: { color: '#fff', fontSize: 15, fontFamily: fonts.bold },
   infoRow: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F8BBD9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
