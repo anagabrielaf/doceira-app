@@ -15,7 +15,7 @@ export default function GerenciarComentarios() {
 
   async function carregarComentarios() {
     try {
-      const data = await api.getComentarios(0);
+      const data = await api.getTodosComentarios();
       setComentarios(Array.isArray(data) ? data : []);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar os comentários!');
@@ -57,7 +57,7 @@ export default function GerenciarComentarios() {
             <View style={styles.cardHeader}>
               <Text style={styles.cardEmoji}>💬</Text>
               <View style={styles.cardHeaderInfo}>
-                <Text style={styles.cardUsuario}>Usuário {comentario.usuarioId}</Text>
+                <Text style={styles.cardUsuario}>{comentario.autorNome || 'Usuário'}</Text>
                 <Text style={styles.cardReceita}>Receita #{comentario.receitaId}</Text>
               </View>
               <TouchableOpacity style={styles.botaoExcluir} onPress={() => excluirComentario(comentario.id)}>
@@ -68,6 +68,7 @@ export default function GerenciarComentarios() {
           </View>
         ))
       )}
+
       <View style={{ height: 40 }} />
     </ScrollView>
   );

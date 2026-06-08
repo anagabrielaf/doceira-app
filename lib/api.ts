@@ -43,6 +43,7 @@ export const api = {
   criarCategoria: (dados: any) => request('POST', '/categorias', dados),
   deletarCategoria: (id: number) => request('DELETE', `/categorias/${id}`),
 // Comentarios
+  getTodosComentarios: () => request('GET', '/comentarios'),
   getComentarios: (receitaId: number) => request('GET', `/comentarios/receita/${receitaId}`),
   criarComentario: (dados: any) => request('POST', '/comentarios', dados),
   deletarComentario: (id: number) => request('DELETE', `/comentarios/${id}`),

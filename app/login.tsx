@@ -48,6 +48,10 @@ export default function Login() {
         {carregando ? <ActivityIndicator color="#fff" /> : <Text style={styles.botaoTexto}>Entrar</Text>}
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push('/lembrar-senha')}>
+        <Text style={styles.link}>Esqueci minha senha</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={() => router.push('/cadastro')}>
         <Text style={styles.link}>Não tem conta? Cadastre-se</Text>
       </TouchableOpacity>
