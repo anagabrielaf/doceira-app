@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert,
 import { useRouter } from 'expo-router';
 import { api, salvarToken, salvarUsuario } from '../lib/api';
 import { fonts } from '../lib/fonts';
+import { useAuth } from '../lib/AuthContext';
 
 const tipos = [
   { valor: 'leitor', label: '👤 Leitor', desc: 'Visualiza, comenta e favorita receitas' },
@@ -11,6 +12,7 @@ const tipos = [
 
 export default function Cadastro() {
   const router = useRouter();
+  const { recarregar } = useAuth();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -39,6 +41,7 @@ export default function Cadastro() {
       } else {
         await salvarToken(data.token);
         await salvarUsuario(data.perfil);
+        await recarregar();
         Alert.alert('Sucesso!', 'Conta criada com sucesso!', [
           { text: 'OK', onPress: () => router.push('/home') }
         ]);

@@ -15,7 +15,7 @@ export default function PainelEditor() {
 
   async function carregarReceitas() {
     try {
-      const data = await api.getReceitas();
+      const data = await api.getTodasReceitas();
       setReceitas(Array.isArray(data) ? data : []);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar as receitas!');

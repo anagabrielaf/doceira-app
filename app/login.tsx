@@ -3,9 +3,11 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, Alert, ActivityInd
 import { useRouter } from 'expo-router';
 import { api, salvarToken, salvarUsuario } from '../lib/api';
 import { fonts } from '../lib/fonts';
+import { useAuth } from '../lib/AuthContext';
 
 export default function Login() {
   const router = useRouter();
+  const { recarregar } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [carregando, setCarregando] = useState(false);
@@ -23,6 +25,7 @@ export default function Login() {
       } else {
         await salvarToken(data.token);
         await salvarUsuario(data.perfil);
+        await recarregar();
         router.push('/home');
       }
     } catch (error) {

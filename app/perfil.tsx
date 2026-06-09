@@ -1,27 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../lib/AuthContext';
 import { api, removerToken, getUsuarioLogado } from '../lib/api';
 import { fonts } from '../lib/fonts';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Perfil() {
   const router = useRouter();
-  const { perfil: authPerfil, isConfeiteira, isAdmin } = useAuth();
+  const { perfil: authPerfil, isConfeiteira, isAdmin, recarregar } = useAuth();
   const [receitas, setReceitas] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregarDados();
+    }, [])
+  );
 
   async function carregarDados() {
     try {
       const usuario = await getUsuarioLogado();
       if (usuario?.id) {
-        const data = await api.getReceitas();
-        const minhas = Array.isArray(data) ? data.filter((r: any) => r.autorId === usuario.id) : [];
-        setReceitas(minhas);
+        const data = await api.getReceitasAutor(usuario.id);
+        setReceitas(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error);
@@ -31,6 +33,8 @@ export default function Perfil() {
 
   async function sair() {
     await removerToken();
+    await AsyncStorage.removeItem('usuario');
+    recarregar();
     router.push('/');
   }
 
@@ -86,7 +90,7 @@ export default function Perfil() {
             <Text style={styles.semReceitas}>Você ainda não tem receitas. Crie uma!</Text>
           ) : (
             receitas.map((receita) => (
-              <TouchableOpacity key={receita.id} style={styles.card} onPress={() => router.push({ pathname: '/receita', params: { id: receita.id } })}>
+              <TouchableOpacity key={receita.id} style={styles.card} onPress={() => router.push({ pathname: '/editar-receita', params: { id: receita.id } })}>
                 <Text style={styles.cardEmoji}>{receita.emoji}</Text>
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardTitulo}>{receita.titulo}</Text>

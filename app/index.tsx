@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { fonts } from '../lib/fonts';
 
 export default function Index() {
@@ -9,8 +9,12 @@ export default function Index() {
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  useEffect(() => {
-    Animated.parallel([
+  useFocusEffect(
+    useCallback(() => {
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.5);
+      slideAnim.setValue(50);
+      Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
@@ -28,7 +32,8 @@ export default function Index() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+    }, [])
+  );
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>

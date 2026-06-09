@@ -27,6 +27,8 @@ export const api = {
 
   // Receitas
   getReceitas: () => request('GET', '/receitas'),
+  getTodasReceitas: () => request('GET', '/receitas/todas'),
+  getReceitasAutor: (autorId: string) => request('GET', `/receitas/autor/${autorId}`),
   getReceita: (id: number) => request('GET', `/receitas/${id}`),
   criarReceita: (dados: any) => request('POST', '/receitas', dados),
   atualizarReceita: (id: number, dados: any) => request('PUT', `/receitas/${id}`, dados),
